@@ -1,13 +1,37 @@
-# Browser WebCrypto method
+# coqui-peer-webcrypto
 
-An experimental `p256-spki` browser authentication implementation is maintained under [`methods/webcrypto/`](https://github.com/Boriken-Dev/coqui-peer/tree/main/methods/webcrypto).
+Two peers prove their P-256 keys to each other and end up with an encrypted session, in a browser or
+natively, through anything that carries their messages. This is a method of
+[coqui-peer](https://boriken-dev.github.io/coqui-peer/), which holds the peer id, the trust store and
+the sans-IO handshake trait.
 
-It uses non-extractable WebCrypto P-256 keys, mutual signed nonce challenges, an explicitly pinned expected server identity, and an independent allow/deny decision for the client key. Its profile identifier is `dev.boriken.coqui.peer-webcrypto/v1`.
+!!! warning "Alpha, not independently reviewed"
+    `0.0.0-alpha.0` is a pre-release: the wire and the API may change in any release before 1.0.
 
-The separate native Rust responder now implements the Coqui `Method` and `Handshake` traits. A JavaScript initiator ↔ Rust responder test is exercised in CI, and the Rust method can check accepted keys against a live `TrustStore`. A native initiator and full production pairing flows are still pending.
+```toml
+coqui-peer-webcrypto = "0.0.0-alpha.0"
+```
 
-**Authentication and pairing are distinct.** Proving private-key possession never adds an unknown peer to the trust database automatically. This method is currently JavaScript-only, experimental, and not yet interoperable with `coqui-peer-tls` certificate identities; a native Rust method and cross-language tests are planned.
+## Why a session, and not only a proof
 
-Applications should import this method as a dependency or a pinned, verified build artifact rather than fork the protocol. The message channel and any unread-message buffering belong below the method, in a generic transport adapter.
+A proof alone says who was there when it was made. Anything carrying the connection, such as a reverse
+proxy that ends TLS or a relay a user was lured to, can forward a proof unchanged, watch both ends
+succeed, and then speak for either. This method therefore ends in keys only the two peers hold, and an
+application keeps every later message inside that session. Nothing depends on the TLS beneath it.
 
-[Method README](https://github.com/Boriken-Dev/coqui-peer/blob/main/methods/webcrypto/README.md)
+A party carrying the connection can forward it, see public keys and record sizes, delay it and cut it.
+It cannot read or change a record, replace a key, or stand in for a pinned peer. It can, if it also
+serves a page's JavaScript, replace that JavaScript, so a browser application ships the module with
+itself.
+
+## Pairing
+
+Two strangers run the handshake accepting any proved key, then
+[coqui-peer's pairing](https://boriken-dev.github.io/coqui-peer/pairing/) inside that session, bound to
+the session and not to any TLS. Afterwards the full key is what each handshake proves. The JavaScript
+module has no PIN exchange; a browser's id is carried to its peer out of band.
+
+The API reference is on [docs.rs](https://docs.rs/coqui-peer-webcrypto) and under
+[Rust API](https://boriken-dev.github.io/coqui-peer-webcrypto/rust/index.html) for `main`. The source, the
+wire protocol (`PROTOCOL.md`), the API headers (`AGENTS.md`) and the changelog are in the
+[repository](https://github.com/Boriken-Dev/coqui-peer-webcrypto).
