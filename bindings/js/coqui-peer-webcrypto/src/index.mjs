@@ -6,12 +6,21 @@
 export const PROFILE = 'dev.boriken.coqui.peer-webcrypto/v1';
 export const METHOD = 'webcrypto';
 export const DEFAULT_MAX_MESSAGE = 3072;
+// What one direction may carry before a new handshake: 2^38, against the 2^38.5 bytes of RFC 8446
+// section 5.5's 2^24.5 full-size AES-GCM records. Each record counts its length and 32.
+export const DEFAULT_SESSION_LIMIT = 2 ** 38;
 
 const VERSION = 1;
 const NONCE_LEN = 32;
 const POINT_LEN = 65;
 const SIGNATURE_LEN = 64;
 const SPKI_LEN = 91;
+const INNER_DATA = 1;
+const INNER_CLOSE = 2;
+const TAG_LEN = 16;
+// A close record: its one inner byte and the tag. It stays possible at the limit.
+const CLOSE_LEN = 1 + TAG_LEN;
+const RECORD_OVERHEAD = 32;
 // A P-256 SubjectPublicKeyInfo holding an uncompressed point is this prefix and 64 coordinate bytes,
 // so comparing it leaves no ASN.1 for two parsers to read differently.
 const SPKI_PREFIX = Uint8Array.from([
@@ -23,7 +32,7 @@ const ECDSA = {name: 'ECDSA', namedCurve: 'P-256'};
 const ECDH = {name: 'ECDH', namedCurve: 'P-256'};
 const SIGN = {name: 'ECDSA', hash: 'SHA-256'};
 const encoder = new TextEncoder();
-const decoder = new TextDecoder('utf-8', {fatal: true});
+const decoder = new TextDecoder('utf-8', {fatal: true, ignoreBOM: true});
 
 function subtle() {
   if (!globalThis.crypto?.subtle || !globalThis.crypto.getRandomValues) {
@@ -83,16 +92,7 @@ async function ephemeralKey(encoded) {
   }
 }
 
-/** The length-prefixed fields signed, and with no role the session id's input. */
-function encodeFields(role, hello, challenge, binding) {
-  const fields = [encoder.encode(PROFILE)];
-  if (role !== null) fields.push(encoder.encode(role));
-  fields.push(
-    un64(hello.publicKey, SPKI_LEN), un64(challenge.publicKey, SPKI_LEN),
-    un64(hello.nonce, NONCE_LEN), un64(challenge.nonce, NONCE_LEN),
-    un64(hello.ephemeral, POINT_LEN), un64(challenge.ephemeral, POINT_LEN),
-    binding,
-  );
+function lengthPrefixed(fields) {
   const output = new Uint8Array(fields.reduce((total, field) => total + 4 + field.length, 0));
   const view = new DataView(output.buffer);
   let offset = 0;
@@ -103,6 +103,19 @@ function encodeFields(role, hello, challenge, binding) {
     offset += field.length;
   }
   return output;
+}
+
+/** The length-prefixed fields signed, and with no role the session id's input. */
+function encodeFields(role, hello, challenge, binding) {
+  const fields = [encoder.encode(PROFILE)];
+  if (role !== null) fields.push(encoder.encode(role));
+  fields.push(
+    un64(hello.publicKey, SPKI_LEN), un64(challenge.publicKey, SPKI_LEN),
+    un64(hello.nonce, NONCE_LEN), un64(challenge.nonce, NONCE_LEN),
+    un64(hello.ephemeral, POINT_LEN), un64(challenge.ephemeral, POINT_LEN),
+    binding,
+  );
+  return lengthPrefixed(fields);
 }
 
 async function sign(identity, role, hello, challenge, binding) {
@@ -149,58 +162,127 @@ function parse(raw, type, members, maxMessage) {
   return contents;
 }
 
-async function hkdf(secretKey, salt, info, bytes) {
+async function hkdf(secretKey, info, bytes) {
   return new Uint8Array(await subtle().deriveBits(
-    {name: 'HKDF', hash: 'SHA-256', salt, info: encoder.encode(info)}, secretKey, bytes * 8,
+    {name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(), info}, secretKey, bytes * 8,
   ));
 }
 
+/** A copy taken now: the caller may reuse its buffer before the record is made. */
+function bytesOf(input) {
+  if (typeof input === 'string') return encoder.encode(input);
+  if (ArrayBuffer.isView(input)) {
+    return new Uint8Array(input.buffer, input.byteOffset, input.byteLength).slice();
+  }
+  if (input instanceof ArrayBuffer) return new Uint8Array(input).slice();
+  throw new TypeError('Expected text or bytes');
+}
+
 /** The session both ends hold after the handshake: an id, and keys only they can derive. */
-async function createSession(ownEphemeral, peerEphemeral, hello, challenge, binding, initiator) {
-  const id = new Uint8Array(await subtle().digest('SHA-256', encodeFields(null, hello, challenge, binding)));
+async function createSession(ownEphemeral, peerEphemeral, hello, challenge, settings, initiator) {
+  const id = new Uint8Array(await subtle().digest('SHA-256', encodeFields(null, hello, challenge, settings.binding)));
   const shared = new Uint8Array(await subtle().deriveBits(
     {name: 'ECDH', public: await ephemeralKey(peerEphemeral)}, ownEphemeral, 256,
   ));
   const master = await subtle().importKey('raw', shared, 'HKDF', false, ['deriveBits']);
   shared.fill(0);
-  const material = await hkdf(master, id, `${PROFILE}/keys`, 96);
+  const info = lengthPrefixed([encoder.encode(`${PROFILE}/keys`), id]);
+  const material = await hkdf(master, info, 96);
   const aes = bytes => subtle().importKey('raw', bytes, 'AES-GCM', false, ['encrypt', 'decrypt']);
-  const initiatorKey = await aes(material.subarray(0, 32));
-  const responderKey = await aes(material.subarray(32, 64));
-  const exporter = await subtle().importKey('raw', material.subarray(64), 'HKDF', false, ['deriveBits']);
+  const keys = {initiator: await aes(material.subarray(0, 32)), responder: await aes(material.subarray(32, 64))};
+  let exporter = await subtle().importKey('raw', material.subarray(64), 'HKDF', false, ['deriveBits']);
   material.fill(0);
-  const sending = direction(initiator ? initiatorKey : responderKey, 'encrypt');
-  const receiving = direction(initiator ? responderKey : initiatorKey, 'decrypt');
+  const status = {failed: false, destroyed: false};
+  const sending = direction(initiator ? keys.initiator : keys.responder, 'encrypt', settings.sessionLimit, status);
+  const receiving = direction(initiator ? keys.responder : keys.initiator, 'decrypt', settings.sessionLimit, status);
+  let closed = false;
+  let peerClosed = false;
   return Object.freeze({
     id,
     /** One message (bytes or text) as one record; send records whole, in the order of these calls. */
-    seal: message => sending(typeof message === 'string' ? encoder.encode(message) : message),
-    /** The message of the next record. A bad record ends this direction for good. */
-    open: record => receiving(record),
-    /** `length` bytes only this session's two peers can derive, for `label`. */
-    export: (label, length) => hkdf(exporter, new Uint8Array(32), `${PROFILE}/export/${label}`, length),
+    seal(message) {
+      const bytes = bytesOf(message);
+      if (closed) return Promise.reject(new Error('This side already closed its direction'));
+      const inner = new Uint8Array(bytes.length + 1);
+      inner[0] = INNER_DATA;
+      inner.set(bytes, 1);
+      return sending(inner, inner.length + TAG_LEN);
+    },
+    /** The record ending this direction, to send last. A peer that never gets it reports truncation. */
+    close() {
+      if (closed) return Promise.reject(new Error('This side already closed its direction'));
+      closed = true;
+      return sending(Uint8Array.of(INNER_CLOSE), 0);
+    },
+    /** The message of the next record, or null for the peer's close. A bad record ends the session. */
+    open(record) {
+      const bytes = bytesOf(record);
+      const opened = receiving(bytes, bytes.length > CLOSE_LEN ? bytes.length : 0);
+      return opened.then(inner => {
+        if (peerClosed) {
+          status.failed = true;
+          throw new Error('The session is over');
+        }
+        if (inner[0] === INNER_DATA) return inner.slice(1);
+        if (inner[0] === INNER_CLOSE && inner.length === 1) {
+          peerClosed = true;
+          return null;
+        }
+        status.failed = true;
+        throw new Error('A session record does not open');
+      });
+    },
+    /** Call when the transport ended; throws when the peer's close record never came. */
+    verifyEnd() {
+      if (status.destroyed || status.failed) throw new Error('The session is over');
+      if (!peerClosed) throw new Error('The stream was truncated: it ended before the peer closed it');
+    },
+    /** `length` bytes only this session's two peers can derive; another label or length is unrelated. */
+    async export(label, length) {
+      if (status.destroyed) throw new Error('The session is over');
+      const lengthField = new Uint8Array(4);
+      new DataView(lengthField.buffer).setUint32(0, length, false);
+      const prefix = lengthPrefixed([encoder.encode(`${PROFILE}/export`), encoder.encode(label)]);
+      const exportInfo = new Uint8Array(prefix.length + 4);
+      exportInfo.set(prefix);
+      exportInfo.set(lengthField, prefix.length);
+      return hkdf(exporter, exportInfo, length);
+    },
+    /** Drops every key this session holds; each later call fails. WebCrypto then frees them. */
+    destroy() {
+      status.destroyed = true;
+      keys.initiator = null;
+      keys.responder = null;
+      exporter = null;
+    },
   });
 }
 
-/** Calls take their sequence number, and resolve, in call order. */
-function direction(key, operation) {
+/** One direction. Calls take their sequence number, and resolve, in call order. */
+function direction(key, operation, limit, state) {
   let sequence = 0n;
-  let over = false;
+  let charged = 0;
   let queue = Promise.resolve();
-  return input => {
+  let cipherKey = key;
+  return (input, length) => {
+    if (state.destroyed) cipherKey = null;
+    if (length > 0) {
+      const total = charged + length + RECORD_OVERHEAD;
+      if (total > limit) return Promise.reject(new Error('This direction reached its session limit'));
+      charged = total;
+    }
     const number = sequence;
     sequence += 1n;
     const run = queue.then(async () => {
-      if (over || number >= 0xffffffffffffffffn) {
-        over = true;
+      if (state.failed || state.destroyed || number >= 0xffffffffffffffffn) {
         throw new Error('The session is over');
       }
       const iv = new Uint8Array(12);
       new DataView(iv.buffer).setBigUint64(4, number, false);
       try {
-        return new Uint8Array(await subtle()[operation]({name: 'AES-GCM', iv, tagLength: 128}, key, input));
+        return new Uint8Array(await subtle()[operation]({name: 'AES-GCM', iv, tagLength: 128}, cipherKey, input));
       } catch {
-        over = true;
+        state.failed = true;
         throw new Error('A session record does not open');
       }
     });
@@ -209,11 +291,18 @@ function direction(key, operation) {
   };
 }
 
-function options({maxMessage = DEFAULT_MAX_MESSAGE, binding = new Uint8Array(), random, ephemeral} = {}) {
+function options({
+  maxMessage = DEFAULT_MAX_MESSAGE, sessionLimit = DEFAULT_SESSION_LIMIT,
+  binding = new Uint8Array(), random, ephemeral,
+} = {}) {
   if (!Number.isInteger(maxMessage) || maxMessage < 0) throw new Error('maxMessage must be a whole number');
+  if (!Number.isSafeInteger(sessionLimit) || sessionLimit < 0) throw new Error('sessionLimit must be a whole number');
+  // Anything else would turn into another value here, or none, and bind to nothing.
+  if (!(binding instanceof Uint8Array)) throw new TypeError('binding must be a Uint8Array or Buffer');
   return {
     maxMessage,
-    binding: Uint8Array.from(binding),
+    sessionLimit,
+    binding: binding.slice(),
     random: random ?? (bytes => globalThis.crypto.getRandomValues(bytes)),
     ephemeral: ephemeral ?? (() => subtle().generateKey(ECDH, false, ['deriveBits'])),
   };
@@ -278,7 +367,7 @@ export async function createInitiator(identity, expectedPeerId, config) {
   if (!PEER_ID.test(expectedPeerId ?? '')) throw new Error('A pinned responder id is required');
   const settings = options(config);
   const nonce = newNonce(settings);
-  const ephemeral = await newEphemeral(settings);
+  let ephemeral = await newEphemeral(settings);
   const hello = {publicKey: identity.publicKey, ephemeral: ephemeral.encoded, nonce};
   let state = 'start';
   let challenge;
@@ -317,8 +406,10 @@ export async function createInitiator(identity, expectedPeerId, config) {
         throw new Error('Responder acceptance proof failed');
       }
       const session = await createSession(
-        ephemeral.privateKey, challenge.ephemeral, hello, challenge, settings.binding, true,
+        ephemeral.privateKey, challenge.ephemeral, hello, challenge, settings, true,
       );
+      ephemeral = null;
+      peerKey = null;
       state = 'done';
       return {peerId: expectedPeerId, session};
     },
@@ -368,9 +459,11 @@ export async function createResponder(identity, {allowClient, ...config} = {}) {
       const id = await peerId(un64(hello.publicKey, SPKI_LEN));
       if (await allowClient(id) !== true) throw new Error('Client is not paired');
       const session = await createSession(
-        ephemeral.privateKey, hello.ephemeral, hello, challenge, settings.binding, false,
+        ephemeral.privateKey, hello.ephemeral, hello, challenge, settings, false,
       );
       const reply = pack('accept', {signature: await sign(identity, 'accept', hello, challenge, settings.binding)});
+      ephemeral = null;
+      clientKey = null;
       state = 'done';
       return {reply, peerId: id, session};
     },

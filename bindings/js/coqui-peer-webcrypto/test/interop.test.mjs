@@ -25,6 +25,9 @@ test('a JavaScript initiator authenticates a Rust responder and they exchange re
     peer.send(toHex(await session.seal('ping from javascript')));
     const reply = await session.open(fromHex(await peer.next()));
     assert.equal(new TextDecoder().decode(reply), 'echo:ping from javascript');
+    peer.send(toHex(await session.close()));
+    assert.equal(await session.open(fromHex(await peer.next())), null);
+    session.verifyEnd();
     peer.end();
     assert.equal(await peer.exit, 0, peer.errors());
     assert.match(peer.errors(), new RegExp(`verified ${client.peerId}`));
@@ -67,6 +70,9 @@ test('a Rust initiator authenticates a JavaScript responder and they exchange re
     assert.equal(new TextDecoder().decode(opened), 'ping from rust');
     peer.send(toHex(await accepted.session.seal('echo:ping from rust')));
     assert.equal(await peer.next(), 'echo:ping from rust');
+    assert.equal(await accepted.session.open(fromHex(await peer.next())), null);
+    accepted.session.verifyEnd();
+    peer.send(toHex(await accepted.session.close()));
     assert.equal(await peer.exit, 0, peer.errors());
   } finally {
     peer.child.kill();
@@ -84,6 +90,28 @@ test('a Rust initiator refuses a JavaScript responder it did not pin', async t =
     peer.send(await responder.challenge(await peer.next()));
     assert.equal(await peer.exit, 3, peer.errors());
     assert.match(peer.errors(), /Untrusted/);
+  } finally {
+    peer.child.kill();
+  }
+});
+
+test('a Rust responder reports a stream a relay cut before the JavaScript close', async t => {
+  if (!cargo) return unavailable(t, 'cargo');
+  const client = await generateIdentity();
+  const peer = startPeer('responder', client.peerId);
+  try {
+    const {peerId} = JSON.parse(await peer.next());
+    const initiator = await createInitiator(client, peerId);
+    peer.send(initiator.hello());
+    peer.send(await initiator.answer(await peer.next()));
+    const {session} = await initiator.finish(await peer.next());
+    await peer.next();
+    peer.send(toHex(await session.seal('the last message through')));
+    await peer.next();
+    await session.seal('never delivered');
+    peer.end();
+    assert.equal(await peer.exit, 4, peer.errors());
+    assert.match(peer.errors(), /Truncated/);
   } finally {
     peer.child.kill();
   }

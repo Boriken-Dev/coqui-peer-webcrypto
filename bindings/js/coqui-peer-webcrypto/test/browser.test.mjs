@@ -49,6 +49,10 @@ try {
   report.echo = new TextDecoder().decode(
     await session.open(unhex(await post('/send', hex(await session.seal('ping from a browser'))))),
   );
+  const closing = await post('/send', hex(await session.close()));
+  report.closed = (await session.open(unhex(closing))) === null;
+  session.verifyEnd();
+  session.destroy();
   report.ok = true;
   await post('/result', JSON.stringify(report));
 } catch (error) {
@@ -95,6 +99,8 @@ test('a browser keeps its key, authenticates a Rust responder and exchanges reco
   const profile = mkdtempSync(join(tmpdir(), 'coqui-browser-'));
   const running = spawn(browser, [
     '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+    // A CI runner's kernel may forbid the sandbox's namespaces; this page is the test's own.
+    ...(process.env.CI ? ['--no-sandbox'] : []),
     `--user-data-dir=${profile}`, `http://127.0.0.1:${server.address().port}/`,
   ], {stdio: 'ignore'});
   const closed = new Promise(resolve => running.once('close', resolve));
@@ -108,6 +114,7 @@ test('a browser keeps its key, authenticates a Rust responder and exchanges reco
     assert.equal(report.sameIdentity, true);
     assert.equal(report.echo, 'echo:ping from a browser');
     assert.equal(report.id, sessionId);
+    assert.equal(report.closed, true);
     peer.end();
     assert.equal(await peer.exit, 0);
   } finally {

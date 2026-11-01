@@ -120,3 +120,104 @@ test('an outer binding is optional, and two different channels are refused', asy
   const one = await pair(new Uint8Array([1]), new Uint8Array());
   await assert.rejects(async () => one.i.answer(await one.r.challenge(one.i.hello())), /key proof failed/);
 });
+
+test('a relay cutting at each record boundary is reported as truncation', async () => {
+  const count = 4;
+  for (let delivered = 0; delivered <= count; delivered += 1) {
+    const {atClient, atServer} = await through(m => m, await parties());
+    const records = [];
+    for (let index = 0; index < count; index += 1) records.push(await atClient.seal(String(index)));
+    records.push(await atClient.close());
+    for (const record of records.slice(0, delivered)) await atServer.open(record);
+    assert.throws(() => atServer.verifyEnd(), /truncated/, `cut after ${delivered} records`);
+  }
+});
+
+test('a stream ending with its close record is complete, and each direction closes on its own', async () => {
+  const {atClient, atServer} = await through(m => m, await parties());
+  assert.throws(() => atServer.verifyEnd(), /truncated/);
+  const close = await atClient.close();
+  await assert.rejects(() => atClient.seal('late'), /already closed/);
+  await assert.rejects(() => atClient.close(), /already closed/);
+  assert.equal(await atServer.open(close), null);
+  atServer.verifyEnd();
+  await assert.rejects(() => atServer.open(close), /session is over|does not open/);
+  const other = await through(m => m, await parties());
+  assert.equal(await other.atServer.open(await other.atClient.close()), null);
+  const reply = await other.atServer.seal('last words');
+  assert.equal(new TextDecoder().decode(await other.atClient.open(reply)), 'last words');
+});
+
+test('a failed open ends sending too', async () => {
+  const {atServer} = await through(m => m, await parties());
+  await assert.rejects(() => atServer.open(new Uint8Array(17)), /does not open/);
+  await assert.rejects(() => atServer.seal('after'), /session is over/);
+  await assert.rejects(() => atServer.close(), /session is over/);
+  assert.throws(() => atServer.verifyEnd(), /session is over/);
+});
+
+test('seal and open read their input when called', async () => {
+  const {atClient, atServer} = await through(m => m, await parties());
+  const message = new TextEncoder().encode('original');
+  const pending = atClient.seal(message);
+  message.fill(88);
+  const record = await pending;
+  const opening = atServer.open(record);
+  record.fill(0);
+  assert.equal(new TextDecoder().decode(await opening), 'original');
+});
+
+test('a destroyed session does nothing more', async () => {
+  const {atClient, atServer} = await through(m => m, await parties());
+  const record = await atClient.seal('before');
+  atServer.destroy();
+  await assert.rejects(() => atServer.open(record), /session is over/);
+  await assert.rejects(() => atServer.seal('after'), /session is over/);
+  await assert.rejects(() => atServer.export('label', 32), /session is over/);
+  assert.throws(() => atServer.verifyEnd(), /session is over/);
+});
+
+test('the session limit stops a direction, and a close still passes', async () => {
+  const client = await generateIdentity();
+  const server = await generateIdentity();
+  const limit = 2 * (1 + 10 + 16 + 32);
+  const i = await createInitiator(client, server.peerId, {sessionLimit: limit});
+  const r = await createResponder(server, {allowClient: async () => true, sessionLimit: limit});
+  const {atClient, atServer} = await through(m => m, {i, r});
+  for (let round = 0; round < 2; round += 1) {
+    await atServer.open(await atClient.seal(new Uint8Array(10)));
+  }
+  await assert.rejects(() => atClient.seal(new Uint8Array(10)), /session limit/);
+  assert.equal(await atServer.open(await atClient.close()), null);
+  atServer.verifyEnd();
+});
+
+test('a limit of zero is allowed, and a peer past it is refused at the opener', async () => {
+  const client = await generateIdentity();
+  const server = await generateIdentity();
+  const i = await createInitiator(client, server.peerId);
+  const r = await createResponder(server, {allowClient: async () => true, sessionLimit: 0});
+  const {atClient, atServer} = await through(m => m, {i, r});
+  await assert.rejects(async () => atServer.open(await atClient.seal('x')), /session limit/);
+  await assert.rejects(() => atServer.seal('x'), /session limit/);
+});
+
+test('exports of one label and two lengths are unrelated', async () => {
+  const {atClient, atServer} = await through(m => m, await parties());
+  const short = await atClient.export('label', 16);
+  const long = await atClient.export('label', 32);
+  assert.notDeepEqual(short, long.subarray(0, 16));
+  assert.deepEqual(await atServer.export('label', 16), short);
+});
+
+test('a binding must be bytes, not something that turns into other bytes or none', async () => {
+  const client = await generateIdentity();
+  const server = await generateIdentity();
+  const bytes = new Uint8Array([1, 2, 3]);
+  for (const binding of [bytes.buffer, new DataView(bytes.buffer), 'abc', [1, 2, 3], 7, null]) {
+    await assert.rejects(() => createInitiator(client, server.peerId, {binding}), /binding must be/);
+    await assert.rejects(() => createResponder(server, {allowClient: async () => true, binding}), /binding must be/);
+  }
+  await createInitiator(client, server.peerId, {binding: Buffer.from(bytes)});
+  await createInitiator(client, server.peerId, {binding: bytes});
+});

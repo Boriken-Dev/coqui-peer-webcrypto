@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {webcrypto} from 'node:crypto';
+import {setFlagsFromString} from 'node:v8';
+import {runInNewContext} from 'node:vm';
 import {
   DEFAULT_MAX_MESSAGE, METHOD, PROFILE, createInitiator, createResponder, generateIdentity,
   importIdentity, loadOrCreateIdentity, profile,
@@ -157,4 +159,29 @@ test('errors quote nothing the peer sent', async () => {
 test('an identity store needs a name, and IndexedDB', async () => {
   await assert.rejects(() => loadOrCreateIdentity(), /store name/);
   await assert.rejects(() => loadOrCreateIdentity('name'), /IndexedDB/);
+});
+
+test('the ephemeral private key is unreachable once the handshake is done', async () => {
+  setFlagsFromString('--expose-gc');
+  const collect = runInNewContext('gc');
+  const client = await generateIdentity();
+  const server = await generateIdentity();
+  const refs = {};
+  const tracked = name => async () => {
+    const pair = await webcrypto.subtle.generateKey({name: 'ECDH', namedCurve: 'P-256'}, false, ['deriveBits']);
+    refs[name] = new WeakRef(pair.privateKey);
+    return pair;
+  };
+  const i = await createInitiator(client, server.peerId, {ephemeral: tracked('initiator')});
+  const r = await createResponder(server, {allowClient: async () => true, ephemeral: tracked('responder')});
+  const accepted = await r.accept(await i.answer(await r.challenge(i.hello())));
+  const finished = await i.finish(accepted.reply);
+  for (let round = 0; round < 10 && (refs.initiator.deref() || refs.responder.deref()); round += 1) {
+    await new Promise(resolve => setImmediate(resolve));
+    collect();
+  }
+  assert.equal(refs.initiator.deref(), undefined);
+  assert.equal(refs.responder.deref(), undefined);
+  // The handshake objects and sessions are still alive here.
+  assert.ok(i && r && finished.session && accepted.session);
 });

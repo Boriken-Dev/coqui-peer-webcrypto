@@ -20,6 +20,7 @@ socket.send(await initiator.answer(await nextMessage()));
 const {session} = await initiator.finish(await nextMessage());
 
 socket.send(await session.seal('every later message goes through the session'));
+socket.send(await session.close());  // the last record; a stream cut before it is reported
 ```
 
 `npm test` runs the tests, including the Rust example in both roles and a real browser, which skip with

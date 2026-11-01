@@ -75,6 +75,8 @@ test('an initiator reaches the vector session from the vector messages', async (
       assert.equal(new TextDecoder().decode(await session.open(hex(record))), message);
     }
   }
+  assert.equal(Buffer.from(await session.close()).toString('hex'), vectors.closeRecord);
+  await assert.rejects(() => session.seal('after'), /already closed/);
 });
 
 test('a responder reaches the vector session from the vector messages', async () => {
@@ -95,7 +97,21 @@ test('a responder reaches the vector session from the vector messages', async ()
       assert.equal(new TextDecoder().decode(await session.open(hex(record))), message);
     }
   }
+  assert.equal(await session.open(hex(vectors.closeRecord)), null);
+  session.verifyEnd();
 });
+
+for (const {name, record} of vectors.refusedRecords) {
+  test(`refused record: ${name}`, async () => {
+    const i = await initiator();
+    i.hello();
+    await i.answer(vectors.messages.challenge);
+    const {session} = await i.finish(vectors.messages.accept);
+    await session.open(hex(vectors.records[2].record));
+    await assert.rejects(() => session.open(hex(record)), /does not open/);
+    await assert.rejects(() => session.seal('after'), /session is over/);
+  });
+}
 
 test('a signature with either s is accepted', async () => {
   const i = await initiator();
@@ -109,6 +125,9 @@ for (const {stage, name, message} of vectors.refused) {
       const r = await responder();
       await assert.rejects(() => r.challenge(message), /Invalid|Oversized|proof/);
       await assert.rejects(() => r.challenge(vectors.messages.hello), /Unexpected/);
+      // The same bytes arriving as bytes, where a decoder could drop a byte order mark.
+      const asBytes = await responder();
+      await assert.rejects(() => asBytes.challenge(new TextEncoder().encode(message)), /Invalid|Oversized|proof/);
     } else if (stage === 'challenge') {
       const i = await initiator();
       i.hello();
