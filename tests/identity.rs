@@ -3,7 +3,10 @@
 use coqui_peer_webcrypto::{Error, Identity};
 
 // `openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256`, a throwaway test key.
-const OPENSSL: &str = "REMOVED-TEST-KEY\n";
+const OPENSSL: &str = "REMOVED-TEST-KEY
+";
+/// `openssl pkey -pubout -outform DER | sha256sum` of that key.
+const OPENSSL_ID: &str = "sha256:a338376e7a3d9876e4f2007bcb078e50a92d5a55449a3670b89adb3d4b43a2c2";
 
 #[test]
 fn a_key_round_trips_through_pem() {
@@ -20,6 +23,7 @@ fn a_key_round_trips_through_pem() {
 fn a_key_openssl_wrote_is_read() {
     let identity = Identity::from_pkcs8_pem(OPENSSL).unwrap();
     assert_eq!(identity.spki_der().len(), 91);
+    assert_eq!(identity.peer_id().to_string(), OPENSSL_ID);
     assert_eq!(identity.key_material().id(), identity.peer_id());
 }
 
