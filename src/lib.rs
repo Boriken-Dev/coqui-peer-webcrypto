@@ -32,4 +32,4 @@ pub use identity::Identity;
 pub use message::{DEFAULT_MAX_MESSAGE, PROFILE};
 pub use pairing::{PAIR_EXPORT_LABEL, PairDial, PairingHandshake, PairingMethod, PairingSession};
 pub use session::{DEFAULT_SESSION_LIMIT, Opener, Sealer, Session};
-pub use trust::{Trust, WaitingGate};
+pub use trust::Trust;

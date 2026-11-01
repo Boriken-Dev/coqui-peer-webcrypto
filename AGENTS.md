@@ -9,10 +9,10 @@ the package and is self-contained. Development documentation lives with the sour
 | --- | --- | --- | --- |
 | `pin` | `coqui-peer/pin` (SPAKE2, HKDF, HMAC) | PIN pairing (`pair::Pairing::pin`) | off |
 
-MSRV Rust 1.89. A default build depends on `coqui-peer` (`=0.0.0-alpha.1`), `p256`, `aes-gcm`, `hkdf`,
-`sha2`, `data-encoding`, `serde`, `serde_json`, `getrandom` and `zeroize`. Version `0.0.0-alpha.0` is
-a pre-release with no independent security review; the wire and API may change in any release before
-1.0. This is the method named `webcrypto` of `coqui-peer` (`PeerId`, `TrustStore`, the sans-IO
+MSRV Rust 1.89. A default build depends on `coqui-peer` (by git revision, `1f00bfe`), `p256`,
+`aes-gcm`, `hkdf`, `sha2`, `data-encoding`, `serde`, `serde_json`, `getrandom` and `zeroize`. This crate
+is unreleased, with no independent security review: depend on a git revision, and name the same
+`coqui-peer` revision if you use it directly; the wire and API may change at any commit. This is the method named `webcrypto` of `coqui-peer` (`PeerId`, `TrustStore`, the sans-IO
 `Handshake`, `pair`); its API header ships in that crate. `PROTOCOL.md` ships here and is the wire.
 
 Imports: everything is at the crate root, including re-exports of `coqui-peer`'s `Established`,
@@ -52,8 +52,6 @@ PKCS#8 key (SEC1 `EC PRIVATE KEY` is not), `Error::Io` for the file, `Error::Ran
 #[non_exhaustive]
 pub enum Trust { Pinned(BTreeSet<PeerId>), Store(TrustStore) }
 impl Trust { pub fn pinned(ids: impl IntoIterator<Item = PeerId>) -> Trust; }
-pub struct WaitingGate { pub per_source: usize, pub interval: Duration, pub ipv6_prefix: u8 }
-// Default: 16, 1 s, 64. Copy, Eq
 ```
 
 Decided after the peer proved its key, never before.
@@ -62,17 +60,16 @@ Decided after the peer proved its key, never before.
   nothing.
 - `Store`: read at each handshake, so a key removed or retired is refused from the next handshake on.
   The stored key must be of this method. A responder records a proved stranger with
-  `record_waiting`, under the `source` given to `respond`, subject to its `WaitingGate`; an initiator
+  `record_waiting`, under the `source` given to `respond`; an initiator
   records nobody. The proved pending successor of an accepted key gets `prove_successor`, then
   `promote_successor` unless `RotationOptions::require_approval`, in which case it is refused until the
   caller promotes it.
 - There is no way to admit anyone here: a stranger's session is a `PairingSession`.
 
-`WaitingGate`: a new stranger is recorded at most once per `interval` on the store's clock, and a source
-holding `per_source` entries refuses it and keeps those waiting. A flood can fill a source; it cannot
-remove anyone. Keep `per_source` at or below the store's `WaitingLimits::per_source`, or the store
-replaces its oldest. Behind a reverse proxy every peer shares the proxy's source, unless the caller passes
-the client's address from a header it trusts.
+How strangers wait is the store's: a source at `WaitingLimits::per_source` refuses a newcomer and keeps
+those waiting, and records one new peer per `TrustStore::with_record_interval`. A flood can fill a source;
+it cannot remove anyone. Behind a reverse proxy every peer shares the proxy's source, unless the caller
+passes the client's address from a header it trusts.
 
 ## The method (`coqui_peer_webcrypto::{WebCrypto, WebCryptoHandshake, METHOD, random}`)
 
@@ -88,10 +85,9 @@ impl WebCrypto {
     pub fn with_initiators(self, trust: Trust) -> WebCrypto;     // whom respond() admits
     pub fn with_max_message(self, bytes: usize) -> WebCrypto;    // before parsing; no floor
     pub fn with_session_limit(self, bytes: u64) -> WebCrypto;    // per direction; DEFAULT_SESSION_LIMIT; no floor
-    pub fn with_waiting_gate(self, gate: WaitingGate) -> WebCrypto;
     pub fn with_random(self, random: Random) -> WebCrypto;       // secure, or for test vectors only
     pub fn identity(&self) -> &Identity;
-    pub fn weakened(&self) -> Vec<Weakening>;  // a replaced random; larger limits; a looser gate
+    pub fn weakened(&self) -> Vec<Weakening>;  // a replaced random; larger limits
 }
 impl coqui_peer::Method for WebCrypto { /* name() = "webcrypto"; initiate(); respond(source) */ }
 pub struct WebCryptoHandshake;

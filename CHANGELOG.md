@@ -15,8 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   type, `close` and `verify_end` so a cut stream is reported as `Error::Truncated`, `with_session_limit`
   per direction, and exports bound to their length.
 - `Identity`: a P-256 key in PKCS#8, generated, read and written.
-- `Trust`: fixed pins, or a live `TrustStore` with rotation and waiting entries under `WaitingGate`, which
-  refuses rather than evicts and limits the rate of writes.
+- `Trust`: fixed pins, or a live `TrustStore` with rotation and waiting entries, bounded by the store.
 - `PairingMethod`, `PairingSession`, `PairDial`: a stranger's handshake ends in a type that runs a sealed
   `coqui_peer::pair` exchange, bound to the session, and carries nothing else.
 - `FramedStream`: refuses a frame by its declared length before reading it.

@@ -127,12 +127,6 @@ pub fn coqui_peer_webcrypto::Session::split(self) -> (coqui_peer_webcrypto::Seal
 pub fn coqui_peer_webcrypto::Session::verify_end(&self) -> core::result::Result<(), coqui_peer_webcrypto::Error>
 impl core::fmt::Debug for coqui_peer_webcrypto::Session
 pub fn coqui_peer_webcrypto::Session::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-pub struct coqui_peer_webcrypto::WaitingGate
-pub coqui_peer_webcrypto::WaitingGate::interval: core::time::Duration
-pub coqui_peer_webcrypto::WaitingGate::ipv6_prefix: u8
-pub coqui_peer_webcrypto::WaitingGate::per_source: usize
-impl core::default::Default for coqui_peer_webcrypto::WaitingGate
-pub fn coqui_peer_webcrypto::WaitingGate::default() -> Self
 pub struct coqui_peer_webcrypto::WebCrypto(_)
 impl coqui_peer_webcrypto::WebCrypto
 pub fn coqui_peer_webcrypto::WebCrypto::identity(&self) -> &coqui_peer_webcrypto::Identity
@@ -143,7 +137,6 @@ pub fn coqui_peer_webcrypto::WebCrypto::with_max_message(self, usize) -> Self
 pub fn coqui_peer_webcrypto::WebCrypto::with_random(self, coqui_peer::random::Random) -> Self
 pub fn coqui_peer_webcrypto::WebCrypto::with_responders(self, coqui_peer_webcrypto::Trust) -> Self
 pub fn coqui_peer_webcrypto::WebCrypto::with_session_limit(self, u64) -> Self
-pub fn coqui_peer_webcrypto::WebCrypto::with_waiting_gate(self, coqui_peer_webcrypto::WaitingGate) -> Self
 impl coqui_peer::method::Method for coqui_peer_webcrypto::WebCrypto
 pub type coqui_peer_webcrypto::WebCrypto::Handshake = coqui_peer_webcrypto::WebCryptoHandshake
 pub fn coqui_peer_webcrypto::WebCrypto::initiate(&self) -> core::result::Result<coqui_peer_webcrypto::WebCryptoHandshake, coqui_peer_webcrypto::Error>

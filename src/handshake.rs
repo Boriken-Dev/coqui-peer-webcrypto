@@ -15,7 +15,7 @@ use crate::message::{
 };
 use crate::session::{DEFAULT_SESSION_LIMIT, Session};
 use crate::transcript::{Keys, ROLE_ACCEPT, ROLE_CLIENT, ROLE_SERVER, Transcript};
-use crate::trust::{Admit, Gate, Trust, WaitingGate};
+use crate::trust::{Admit, Trust};
 
 /// The method name: the `<method>` of `coqui-peer-<method>`, under which a trust store keeps the
 /// keys of this method.
@@ -36,7 +36,6 @@ pub(crate) struct Config {
     pub(crate) session_limit: u64,
     pub(crate) random: Random,
     pub(crate) random_replaced: bool,
-    pub(crate) gate: Gate,
 }
 
 impl Config {
@@ -49,7 +48,6 @@ impl Config {
             session_limit: DEFAULT_SESSION_LIMIT,
             random: crate::random(),
             random_replaced: false,
-            gate: Gate::new(WaitingGate::default()),
         }
     }
 
@@ -83,21 +81,6 @@ impl Config {
         }
         if self.random_replaced {
             weakened.push(Weakening::new("random", "caller's", "operating system's"));
-        }
-        let (gate, strict) = (self.gate.limits, WaitingGate::default());
-        if gate.per_source > strict.per_source {
-            weakened.push(Weakening::new(
-                "waiting_gate.per_source",
-                gate.per_source.to_string(),
-                strict.per_source.to_string(),
-            ));
-        }
-        if gate.interval < strict.interval {
-            weakened.push(Weakening::new(
-                "waiting_gate.interval",
-                format!("{:?}", gate.interval),
-                format!("{:?}", strict.interval),
-            ));
         }
         weakened
     }
@@ -174,13 +157,6 @@ impl WebCrypto {
     #[must_use]
     pub fn with_session_limit(mut self, bytes: u64) -> Self {
         Arc::make_mut(&mut self.0).session_limit = bytes;
-        self
-    }
-
-    /// How proved strangers are recorded as waiting under [`Trust::Store`].
-    #[must_use]
-    pub fn with_waiting_gate(mut self, gate: WaitingGate) -> Self {
-        Arc::make_mut(&mut self.0).gate = Gate::new(gate);
         self
     }
 
@@ -405,7 +381,7 @@ impl Exchange {
                 transcript.verify(&peer.key, ROLE_CLIENT, &signature)?;
                 let admit = config.initiators.as_ref().ok_or(Error::Unsupported)?;
                 let material = key_material(&peer.der);
-                if !admit.admits(&material, Some((&config.gate, self.source))) {
+                if !admit.admits(&material, Some(self.source)) {
                     return Err(Error::Untrusted);
                 }
                 let keys = derive(&transcript, &secret, &peer_ephemeral)?;
