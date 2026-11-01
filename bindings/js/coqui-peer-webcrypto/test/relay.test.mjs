@@ -69,6 +69,15 @@ test('a relay cannot replay, reorder, reflect or alter a record', async () => {
   await assert.rejects(async () => other.atServer.open(await elsewhere.atClient.seal('one')), /does not open/);
 });
 
+test('nothing after a bad record is believed, even at its right place', async () => {
+  const {atClient, atServer} = await through(m => m, await parties());
+  const first = await atClient.seal('one');
+  const second = await atClient.seal('two');
+  first[0] ^= 1;
+  await assert.rejects(() => atServer.open(first), /does not open/);
+  await assert.rejects(() => atServer.open(second), /session is over/);
+});
+
 test('a key swapped in the hello fails the proof the initiator checks', async () => {
   const p = await parties();
   const attacker = await generateIdentity();

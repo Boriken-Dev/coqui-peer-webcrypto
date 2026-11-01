@@ -142,6 +142,8 @@ fn refused(hello: &str, challenge: &str) -> Value {
     };
     let long_form = [&[0x30, 0x81, der[1]], &der[2..]].concat();
     let trailing = [der.as_slice(), &[0]].concat();
+    let mut other_curve = der.clone();
+    other_curve[20] ^= 1;
     let mut off_curve = der.clone();
     off_curve[90] ^= 1;
     let zero_point = [&der[..27], &[0u8; 64]].concat();
@@ -267,6 +269,10 @@ fn refused(hello: &str, challenge: &str) -> Value {
         good(
             "key with a trailing byte",
             hello_with(&enc(&trailing), &ephemeral, &nonce),
+        ),
+        good(
+            "a key of the same length naming another curve",
+            hello_with(&enc(&other_curve), &ephemeral, &nonce),
         ),
         good(
             "key off the curve",

@@ -164,6 +164,11 @@
       "stage": "hello"
     },
     {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0CAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "a key of the same length naming another curve",
+      "stage": "hello"
+    },
+    {
       "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlQ\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
       "name": "key off the curve",
       "stage": "hello"

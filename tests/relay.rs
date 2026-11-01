@@ -96,6 +96,18 @@ fn a_relay_cannot_inject_a_message_after_the_proof() {
 }
 
 #[test]
+fn nothing_after_a_bad_record_is_believed_even_at_its_right_place() {
+    let (_, _, dialing, listening) = pinned_pair();
+    let (at_client, at_server) = run(&dialing, &listening).unwrap();
+    let (mut client, mut server) = (at_client.session, at_server.session);
+    let mut first = client.seal(b"one").unwrap();
+    let second = client.seal(b"two").unwrap();
+    first[0] ^= 1;
+    assert!(matches!(server.open(&first), Err(Error::Record)));
+    assert!(matches!(server.open(&second), Err(Error::Record)));
+}
+
+#[test]
 fn a_relay_cannot_swap_replay_reorder_or_reflect_a_record() {
     let (_, _, dialing, listening) = pinned_pair();
     let (at_client, at_server) = run(&dialing, &listening).unwrap();
@@ -124,6 +136,15 @@ fn a_relay_cannot_swap_replay_reorder_or_reflect_a_record() {
     assert_eq!(server.open(&mine).unwrap(), b"one");
     assert!(matches!(server.open(&mine), Err(Error::Record)), "replayed");
     drop(record);
+
+    let (at_client, at_server) = run(&dialing, &listening).unwrap();
+    let (mut client, mut server) = (at_client.session, at_server.session);
+    let theirs = server.seal(b"back").unwrap();
+    assert!(
+        matches!(server.open(&theirs), Err(Error::Record)),
+        "reflected at the responder"
+    );
+    assert_eq!(client.open(&theirs).unwrap(), b"back");
 
     let (at_client, at_server) = run(&dialing, &listening).unwrap();
     let (mut client, mut server) = (at_client.session, at_server.session);
