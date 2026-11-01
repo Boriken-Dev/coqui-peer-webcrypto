@@ -105,7 +105,14 @@ test('a browser keeps its key, authenticates a Rust responder and exchanges reco
   ], {stdio: 'ignore'});
   const closed = new Promise(resolve => running.once('close', resolve));
   try {
-    const report = await finished;
+    // Node's own test timeout would leave the server and browser holding the process open.
+    const report = await Promise.race([
+      finished,
+      closed.then(() => ({ok: false, error: 'the browser exited with no report'})),
+      new Promise(resolve => {
+        setTimeout(resolve, 100_000, {ok: false, error: 'the page sent no report'}).unref();
+      }),
+    ]);
     assert.equal(report.ok, true, report.error);
     assert.equal(report.secure, true);
     assert.equal(report.extractable, false);
