@@ -4,7 +4,8 @@
 import test, {before} from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {existsSync, mkdtempSync, readFileSync, rmSync} from 'node:fs';
+import {existsSync, mkdtempSync, readFileSync} from 'node:fs';
+import {rm} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -130,6 +131,9 @@ test('a browser keeps its key, authenticates a Rust responder and exchanges reco
     await closed;
     server.close();
     server.closeAllConnections();
-    rmSync(profile, {recursive: true, force: true, maxRetries: 10, retryDelay: 200});
+    // Chrome's helpers can outlive its main process and still write here, and a directory left in
+    // the temporary folder is no reason to fail a test whose assertions passed.
+    await rm(profile, {recursive: true, force: true, maxRetries: 10, retryDelay: 200})
+      .catch(error => t.diagnostic(`left ${profile} behind: ${error.code}`));
   }
 });
