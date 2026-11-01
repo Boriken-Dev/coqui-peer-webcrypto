@@ -5,11 +5,12 @@ natively, through anything that carries their messages. This is a method of
 [coqui-peer](https://boriken-dev.github.io/coqui-peer/), which holds the peer id, the trust store and
 the sans-IO handshake trait.
 
-!!! warning "Alpha, not independently reviewed"
-    `0.0.0-alpha.0` is a pre-release: the wire and the API may change in any release before 1.0.
+!!! warning "Unreleased, not independently reviewed"
+    The wire and the API may change at any commit. There are no releases for now: depend on a git
+    revision.
 
-```toml
-coqui-peer-webcrypto = "0.0.0-alpha.0"
+```bash
+cargo add --git https://github.com/Boriken-Dev/coqui-peer-webcrypto --rev <commit> coqui-peer-webcrypto
 ```
 
 ## Why a session, and not only a proof
@@ -31,7 +32,7 @@ Two strangers run a handshake that accepts any proved key and ends in a type tha
 session and not to any TLS. Afterwards the full key is what each handshake proves. The JavaScript
 module has no PIN exchange; a browser's id is carried to its peer out of band.
 
-The API reference is on [docs.rs](https://docs.rs/coqui-peer-webcrypto) and under
+The API reference is under
 [Rust API](https://boriken-dev.github.io/coqui-peer-webcrypto/rust/index.html) for `main`. The source, the
 wire protocol (`PROTOCOL.md`), the API headers (`AGENTS.md`) and the changelog are in the
 [repository](https://github.com/Boriken-Dev/coqui-peer-webcrypto).

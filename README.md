@@ -1,21 +1,18 @@
 # coqui-peer-webcrypto
 
-[![Version](https://img.shields.io/crates/v/coqui-peer-webcrypto.svg)](https://crates.io/crates/coqui-peer-webcrypto)
-[![Rust version](https://img.shields.io/crates/msrv/coqui-peer-webcrypto.svg)](https://crates.io/crates/coqui-peer-webcrypto)
 [![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue.svg)](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/LICENSE)
-[![Docs](https://img.shields.io/docsrs/coqui-peer-webcrypto)](https://docs.rs/coqui-peer-webcrypto)
 [![CI](https://img.shields.io/github/actions/workflow/status/Boriken-Dev/coqui-peer-webcrypto/test.yml)](https://github.com/Boriken-Dev/coqui-peer-webcrypto/actions/workflows/test.yml)
 
 **Two peers prove their P-256 keys to each other and end up with an encrypted session, in a browser
 or natively, through anything that carries their messages.** This is a method of
-[`coqui-peer`](https://crates.io/crates/coqui-peer), which holds the peer id, the trust store and the
+[`coqui-peer`](https://github.com/Boriken-Dev/coqui-peer), which holds the peer id, the trust store and the
 sans-IO handshake trait. It depends on no TLS session beneath it, so it works behind a
 TLS-terminating reverse proxy, and such a proxy can connect the two peers and nothing more. See the
 [documentation](https://boriken-dev.github.io/coqui-peer-webcrypto/) and the
 [wire protocol](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/PROTOCOL.md).
 
-> **Status: alpha, not independently reviewed.** The wire and the API may change in any release
-> before 1.0.
+> **Status: unreleased, and not independently reviewed.** The wire and the API may change at any
+> commit. There are no releases for now: depend on a git revision.
 
 ## Features
 
@@ -36,8 +33,11 @@ TLS-terminating reverse proxy, and such a proxy can connect the two peers and no
 ## Installation
 
 ```bash
-cargo add coqui-peer-webcrypto@0.0.0-alpha.0
+cargo add --git https://github.com/Boriken-Dev/coqui-peer-webcrypto --rev <commit> coqui-peer-webcrypto
 ```
+
+This crate names `coqui-peer` by git revision too. A consumer that uses `coqui-peer` directly names the
+same revision, as `Cargo.toml` here does, so both see one `PeerId` type.
 
 | Feature | Adds | Needed for | Default |
 | --- | --- | --- | --- |
@@ -115,7 +115,7 @@ Everything is at the crate root; the shipped `AGENTS.md` is the full header.
 | Item | Purpose |
 | --- | --- |
 | `Identity` | a long-term P-256 key: generate, read, write, id |
-| `Trust`, `WaitingGate` | whom a role admits: pins or a store; how proved strangers are queued |
+| `Trust` | whom a role admits: pins or a store |
 | `WebCrypto`, `WebCryptoHandshake` | the `coqui_peer::Method` and its `Handshake` |
 | `Session`, `Sealer`, `Opener` | the id, records, close and exports a handshake ends in |
 | `PairingMethod`, `PairingHandshake`, `PairingSession`, `PairDial` | a stranger's handshake, and the sealed pairing drivers it ends in |
@@ -152,8 +152,9 @@ The Node tests run the Rust example in both roles and a real browser against it 
 
 ### Releasing
 
-`.github/workflows/release.yml` runs on a `v*` tag: it gates on the tests and a strict docs build,
-then creates the release from `CHANGELOG.md`. Every tag needs the maintainer's explicit go-ahead.
+There are no releases for now, and dependents pin a git revision. When there are,
+`.github/workflows/release.yml` runs on a `v*` tag: it gates on the tests and a strict docs build, then
+creates the release from `CHANGELOG.md`. Every tag needs the maintainer's explicit go-ahead.
 
 ## License
 
