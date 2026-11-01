@@ -19,16 +19,16 @@ proxy that ends TLS or a relay a user was lured to, can forward a proof unchange
 succeed, and then speak for either. This method therefore ends in keys only the two peers hold, and an
 application keeps every later message inside that session. Nothing depends on the TLS beneath it.
 
-A party carrying the connection can forward it, see public keys and record sizes, delay it and cut it.
-It cannot read or change a record, replace a key, or stand in for a pinned peer. It can, if it also
+A party carrying the connection can forward it, see public keys and record sizes, delay it and cut it,
+and a cut is reported. It cannot read or change a record, replace a key, or stand in for a pinned peer. It can, if it also
 serves a page's JavaScript, replace that JavaScript, so a browser application ships the module with
 itself.
 
 ## Pairing
 
-Two strangers run the handshake accepting any proved key, then
-[coqui-peer's pairing](https://boriken-dev.github.io/coqui-peer/pairing/) inside that session, bound to
-the session and not to any TLS. Afterwards the full key is what each handshake proves. The JavaScript
+Two strangers run a handshake that accepts any proved key and ends in a type that can only pair, then
+[coqui-peer's pairing](https://boriken-dev.github.io/coqui-peer/pairing/) sealed inside it, bound to the
+session and not to any TLS. Afterwards the full key is what each handshake proves. The JavaScript
 module has no PIN exchange; a browser's id is carried to its peer out of band.
 
 The API reference is on [docs.rs](https://docs.rs/coqui-peer-webcrypto) and under
