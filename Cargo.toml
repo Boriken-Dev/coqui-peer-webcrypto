@@ -1,0 +1,19 @@
+[package]
+name = "coqui-peer-webcrypto"
+version = "0.0.0"
+publish = false
+edition = "2024"
+rust-version = "1.89"
+license = "MPL-2.0"
+description = "Experimental native browser-compatible P-256 Coqui peer method"
+
+[dependencies]
+coqui-peer = { path = "../../.." }
+p256 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+base64 = "0.22"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,13 @@
+{
+  "name": "@boriken/coqui-peer-webcrypto",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Experimental browser WebCrypto peer authentication method",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
