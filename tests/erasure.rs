@@ -2,6 +2,10 @@
 //! counts the ones still holding a secret. It sees the heap only: copies a move leaves on the stack,
 //! and what libraries keep there, are outside what this crate promises.
 //!
+//! It zeroes each block it hands out, so a hit is something written since: a block's unwritten capacity
+//! can otherwise hold what an earlier owner left, here the vectors' hex text, whose `3`s are the bytes
+//! of one scalar.
+//!
 //! One test in this binary, since the allocator counts every thread's frees.
 
 use std::alloc::{GlobalAlloc, Layout, System};
@@ -33,12 +37,17 @@ fn holds(block: &[u8], needle: &[u8]) -> bool {
     block.len() >= needle.len() && block.windows(needle.len()).any(|window| window == needle)
 }
 
-// SAFETY: every call forwards to `System` with the same arguments. `dealloc` also reads the block
-// it was given, which is live and `layout.size()` bytes until the forwarded call.
+// SAFETY: every call forwards to `System` with the same arguments. `alloc` also writes the block it
+// got, when it got one, and `dealloc` reads the block it was given, each live and `layout.size()` bytes.
 unsafe impl GlobalAlloc for Scanning {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         // SAFETY: forwarded unchanged.
-        unsafe { System.alloc(layout) }
+        let block = unsafe { System.alloc(layout) };
+        if !block.is_null() {
+            // SAFETY: a non-null result is writable for `layout.size()` bytes.
+            unsafe { block.write_bytes(0, layout.size()) };
+        }
+        block
     }
 
     unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
