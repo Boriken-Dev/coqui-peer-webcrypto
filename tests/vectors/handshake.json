@@ -1,0 +1,333 @@
+{
+  "challengeOtherS": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V6D_1KBCZfQlKPvkNPL66E-9WVYJ5HtI2dI9SJ50mIl4A\"}",
+  "initiator": {
+    "ephemeralPoint": "0451a7580833898ea1b183cbd7350a4099078c6ef1c1e18e970cd7683035f25e7d0110522712b0b5a7cff081685486984a94e6831edac46e7360fa9d834a7a81a1",
+    "ephemeralScalar": "3333333333333333333333333333333333333333333333333333333333333333",
+    "nonce": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "peerId": "sha256:76805a63a6980c18075424a13f32772d02d7c71b4965754c1ce84f5841220327",
+    "pkcs8": "308187020100301306072a8648ce3d020106082a8648ce3d030107046d306b02010104201111111111111111111111111111111111111111111111111111111111111111a144034200040217e617f0b6443928278f96999e69a23a4f2c152bdf6d6cdf66e5b80282d4ed194a7debcb97712d2dda3ca85aa8765a56f45fc758599652f2897c65306e5794",
+    "spki": "3059301306072a8648ce3d020106082a8648ce3d030107034200040217e617f0b6443928278f96999e69a23a4f2c152bdf6d6cdf66e5b80282d4ed194a7debcb97712d2dda3ca85aa8765a56f45fc758599652f2897c65306e5794"
+  },
+  "messages": {
+    "accept": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"accept\",\"signature\":\"Dge7vy6c-eP0eBuYSEXBpg3pxMvTNXIG2qElX2x4Wi2E3dTa6mtV9CJH8MAuPfIke1hqR4NNK7HQoBAn_mM-OQ\"}",
+    "challenge": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+    "hello": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+    "proof": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"proof\",\"signature\":\"ge59GLqJvBpmMcGfS7VC853xfJApT6VUWYyUCNda_PqGz1zk0wC8BqJdLUnU6RFRYLFPA9EcDHHlPJQqWdg8Uw\"}"
+  },
+  "profile": "dev.boriken.coqui.peer-webcrypto/v1",
+  "records": [
+    {
+      "from": "initiator",
+      "message": "from the initiator",
+      "record": "799184a0f84ecf4c27686a3e8b5bc8bd854102a8efe836594ca60ffab56309c68499"
+    },
+    {
+      "from": "initiator",
+      "message": "",
+      "record": "3cb1516fe6210b4b2c7f1fbc1db4813a"
+    },
+    {
+      "from": "responder",
+      "message": "from the responder",
+      "record": "3244bb09fab4b38420ce7868ede2ebc2e462c9e628e7e3bb7540d7d0d07fd0a1de5f"
+    }
+  ],
+  "refused": [
+    {
+      "message": "",
+      "name": "empty",
+      "stage": "hello"
+    },
+    {
+      "message": "attacker text",
+      "name": "not json",
+      "stage": "hello"
+    },
+    {
+      "message": "[]",
+      "name": "an array",
+      "stage": "hello"
+    },
+    {
+      "message": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",
+      "name": "deep nesting",
+      "stage": "hello"
+    },
+    {
+      "message": " {\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "leading whitespace",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}\n",
+      "name": "trailing newline",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\", \"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "spaces inside",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"version\":1,\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "members out of order",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\",\"extra\":\"x\"}",
+      "name": "unknown member",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "duplicate member",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+      "name": "signature on a hello",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v2\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "another profile",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":0,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "version 0",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":2,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "version 2",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1.0,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "version 1.0",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":\"1\",\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "version as text",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"proof\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "another type",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"\\u0068ello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "an escaped character",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoQ\"}",
+      "name": "short nonce",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGh\"}",
+      "name": "long nonce",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE=\"}",
+      "name": "padded nonce",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaj\"}",
+      "name": "nonce with stray trailing bits",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"+aGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "nonce in the other base64 alphabet",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgACAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "compressed key",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MIFZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABAIX5hfwtkQ5KCePlpmeaaI6TywVK99tbN9m5bgCgtTtGUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5Q\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "long-form DER key",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlAA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "key with a trailing byte",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlQ\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "key off the curve",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "key at the zero point",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "the responder's own key",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"AgIX5hfwtkQ5KCePlpmeaaI6TywVK99tbN9m5bgCgtTt\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "compressed ephemeral",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BAIX5hfwtkQ5KCePlpmeaaI6TywVK99tbN9m5bgCgtTtGUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5U\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "ephemeral off the curve",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "ephemeral at the zero point",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "ephemeral an SPKI",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERER\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "a P-384 key",
+      "stage": "hello"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"gwnxsvKeTDVD0VhfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+      "name": "altered signature",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"}",
+      "name": "zero signature",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"_____wAAAAD__________7zm-q2nF56E87nKwvxjJVEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ\"}",
+      "name": "r at the group order",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"MEUCIQCDCfGy8p5MNUPRWV9bl5VTkG5b4G6dnhJ5jB85BXX5XgIgfACtffZoL2xcEG8sNBRewMeBooYVKnsdqsSoSSoA_3E\"}",
+      "name": "DER signature",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB\"}",
+      "name": "short signature",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"Yyw57NHoK9aaQKrpL6Kx8UASaqIWgRNpCDwr3pfRfM-hMqZ8pL_zwoc2B7qqPPoCiH-qkpBn4p_5kpZm4b70hg\"}",
+      "name": "signed for the role client",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"Dge7vy6c-eP0eBuYSEXBpg3pxMvTNXIG2qElX2x4Wi2E3dTa6mtV9CJH8MAuPfIke1hqR4NNK7HQoBAn_mM-OQ\"}",
+      "name": "signed for the role accept",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEV-l39tt-M8P-es8oQu2YcAnK9W1FhoL8pEe309diqzTFqzdwulc73_VBQGVkD_tbNG36hN7E201o5fWcxHHC7A\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+      "name": "a key swapped for another",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+      "name": "another nonce",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+      "name": "another ephemeral",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+      "name": "the initiator's own key",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "a hello in its place",
+      "stage": "challenge"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"proof\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+      "name": "the challenge's signature reflected",
+      "stage": "proof"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"proof\",\"signature\":\"OBkOs3KZjSM2GgpU9BtK3CcXFwjySrNXEFtBSKViyiSGpnBE92uDPfJc1P2r23lBCdye0UEk6_dE39793Cl-gA\"}",
+      "name": "signed for the role server",
+      "stage": "proof"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"proof\",\"signature\":\"GRKQ3r-8iosM6AVYe41ChazC0oEi1efA-FaKBifMjdnZHkciySip3XfHhCucXwhn0zt8BUsjuRoU6WKO3IuB2g\"}",
+      "name": "signed for the role accept",
+      "stage": "proof"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"proof\",\"signature\":\"HiXSSb9FvwmXIwOPk3OHyaBnyYjDuhi45DwPV8ibTshuKWUGKsX1yj596qGPzoZUVwOeJ38yDpfofsN22vO6UQ\"}",
+      "name": "signed by a stranger",
+      "stage": "proof"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"proof\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"signature\":\"ge59GLqJvBpmMcGfS7VC853xfJApT6VUWYyUCNda_PqGz1zk0wC8BqJdLUnU6RFRYLFPA9EcDHHlPJQqWdg8Uw\"}",
+      "name": "with an extra key",
+      "stage": "proof"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"accept\",\"signature\":\"ge59GLqJvBpmMcGfS7VC853xfJApT6VUWYyUCNda_PqGz1zk0wC8BqJdLUnU6RFRYLFPA9EcDHHlPJQqWdg8Uw\"}",
+      "name": "an accept in its place",
+      "stage": "proof"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"accept\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V58AK199mgvbFwQbyw0FF7Ax4GihhUqex2qxKhJKgD_cQ\"}",
+      "name": "the challenge's signature replayed",
+      "stage": "accept"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"accept\",\"signature\":\"ge59GLqJvBpmMcGfS7VC853xfJApT6VUWYyUCNda_PqGz1zk0wC8BqJdLUnU6RFRYLFPA9EcDHHlPJQqWdg8Uw\"}",
+      "name": "the client's proof reflected",
+      "stage": "accept"
+    },
+    {
+      "message": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"accept\",\"signature\":\"fJ-jd29JZV2Qx-izCKkTaVAK1n3-d_OYiYcrrlaPW7g87bhlQ3Ww8UnQFSBLUjIxT75jqtuExFWLqSerMNv9xg\"}",
+      "name": "signed by a stranger",
+      "stage": "accept"
+    }
+  ],
+  "responder": {
+    "ephemeralPoint": "045b36890dacbd7c9a96bb74a1ee28b3d2d75b72e09a20ef25cf8e6fd8a9f0350d0e14bed8d4682a34d83538bdff5b96e89a6666ec0db5745d02fa1210072df75a",
+    "ephemeralScalar": "4444444444444444444444444444444444444444444444444444444444444444",
+    "nonce": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+    "peerId": "sha256:bfcba2b742a807bbb72b522fa4694c4604ff68ebd21b048c56d53dc18a94d5c4",
+    "pkcs8": "308187020100301306072a8648ce3d020106082a8648ce3d030107046d306b02010104202222222222222222222222222222222222222222222222222222222222222222a14403420004d65a93977caa3d1b081852ff57a79e465f1660577304baead505dd3a48589cf350185e895372df6221ea3a137557e473fddb6755f05bd507c3c533fce9c91285",
+    "spki": "3059301306072a8648ce3d020106082a8648ce3d03010703420004d65a93977caa3d1b081852ff57a79e465f1660577304baead505dd3a48589cf350185e895372df6221ea3a137557e473fddb6755f05bd507c3c533fce9c91285"
+  },
+  "session": {
+    "exporter": "1e8a77afb32c4be8e8c7a30588c9a2f0e567d789cc3e39448c9aeb773157afff",
+    "id": "0e0408a72f6567dc6daa7b93e38144b8ee5eb5c9c0915018fff28b0fb384b00e",
+    "initiatorKey": "66079aaa42f99f6cf929f7829b8a195a27f78f2d8aa8046a97fdc5ecaaf1af42",
+    "pairExport": "33252a5a97753fbf57c884da4ebe7e21777df3eaac56e3066362dafba4a34858",
+    "responderKey": "07eab5e7b4e7a9d956c5258fc2cace4642ed1a799718ceccd67f21549d584d9f",
+    "shared": "5238f9f956812e75918895390fa057a2063aa66d4d5eefbe6ecdcf78342d2922"
+  },
+  "signed": {
+    "accept": "000000236465762e626f72696b656e2e636f7175692e706565722d77656263727970746f2f7631000000066163636570740000005b3059301306072a8648ce3d020106082a8648ce3d030107034200040217e617f0b6443928278f96999e69a23a4f2c152bdf6d6cdf66e5b80282d4ed194a7debcb97712d2dda3ca85aa8765a56f45fc758599652f2897c65306e57940000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004d65a93977caa3d1b081852ff57a79e465f1660577304baead505dd3a48589cf350185e895372df6221ea3a137557e473fddb6755f05bd507c3c533fce9c9128500000020a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a100000020b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2000000410451a7580833898ea1b183cbd7350a4099078c6ef1c1e18e970cd7683035f25e7d0110522712b0b5a7cff081685486984a94e6831edac46e7360fa9d834a7a81a100000041045b36890dacbd7c9a96bb74a1ee28b3d2d75b72e09a20ef25cf8e6fd8a9f0350d0e14bed8d4682a34d83538bdff5b96e89a6666ec0db5745d02fa1210072df75a00000000",
+    "client": "000000236465762e626f72696b656e2e636f7175692e706565722d77656263727970746f2f763100000006636c69656e740000005b3059301306072a8648ce3d020106082a8648ce3d030107034200040217e617f0b6443928278f96999e69a23a4f2c152bdf6d6cdf66e5b80282d4ed194a7debcb97712d2dda3ca85aa8765a56f45fc758599652f2897c65306e57940000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004d65a93977caa3d1b081852ff57a79e465f1660577304baead505dd3a48589cf350185e895372df6221ea3a137557e473fddb6755f05bd507c3c533fce9c9128500000020a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a100000020b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2000000410451a7580833898ea1b183cbd7350a4099078c6ef1c1e18e970cd7683035f25e7d0110522712b0b5a7cff081685486984a94e6831edac46e7360fa9d834a7a81a100000041045b36890dacbd7c9a96bb74a1ee28b3d2d75b72e09a20ef25cf8e6fd8a9f0350d0e14bed8d4682a34d83538bdff5b96e89a6666ec0db5745d02fa1210072df75a00000000",
+    "server": "000000236465762e626f72696b656e2e636f7175692e706565722d77656263727970746f2f7631000000067365727665720000005b3059301306072a8648ce3d020106082a8648ce3d030107034200040217e617f0b6443928278f96999e69a23a4f2c152bdf6d6cdf66e5b80282d4ed194a7debcb97712d2dda3ca85aa8765a56f45fc758599652f2897c65306e57940000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004d65a93977caa3d1b081852ff57a79e465f1660577304baead505dd3a48589cf350185e895372df6221ea3a137557e473fddb6755f05bd507c3c533fce9c9128500000020a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a100000020b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2000000410451a7580833898ea1b183cbd7350a4099078c6ef1c1e18e970cd7683035f25e7d0110522712b0b5a7cff081685486984a94e6831edac46e7360fa9d834a7a81a100000041045b36890dacbd7c9a96bb74a1ee28b3d2d75b72e09a20ef25cf8e6fd8a9f0350d0e14bed8d4682a34d83538bdff5b96e89a6666ec0db5745d02fa1210072df75a00000000"
+  }
+}

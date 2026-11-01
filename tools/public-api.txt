@@ -1,0 +1,102 @@
+pub mod coqui_peer_webcrypto
+pub use coqui_peer_webcrypto::Established
+pub use coqui_peer_webcrypto::KeyMaterial
+pub use coqui_peer_webcrypto::Method
+pub use coqui_peer_webcrypto::PeerId
+pub use coqui_peer_webcrypto::Random
+pub use coqui_peer_webcrypto::TrustStore
+pub use coqui_peer_webcrypto::Weakening
+pub use coqui_peer_webcrypto::pair
+#[non_exhaustive] pub enum coqui_peer_webcrypto::Error
+pub coqui_peer_webcrypto::Error::BadProof
+pub coqui_peer_webcrypto::Error::Io(core::io::error::Error)
+pub coqui_peer_webcrypto::Error::Key
+pub coqui_peer_webcrypto::Error::Malformed
+pub coqui_peer_webcrypto::Error::Random
+pub coqui_peer_webcrypto::Error::Record
+pub coqui_peer_webcrypto::Error::State
+pub coqui_peer_webcrypto::Error::TooLong
+pub coqui_peer_webcrypto::Error::Unsupported
+pub coqui_peer_webcrypto::Error::Untrusted
+impl core::convert::From<core::io::error::Error> for coqui_peer_webcrypto::Error
+pub fn coqui_peer_webcrypto::Error::from(core::io::error::Error) -> Self
+impl core::error::Error for coqui_peer_webcrypto::Error
+pub fn coqui_peer_webcrypto::Error::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Display for coqui_peer_webcrypto::Error
+pub fn coqui_peer_webcrypto::Error::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+#[non_exhaustive] pub enum coqui_peer_webcrypto::Trust
+pub coqui_peer_webcrypto::Trust::AnyWithKeyProof
+pub coqui_peer_webcrypto::Trust::Pinned(alloc::collections::btree::set::BTreeSet<coqui_peer::id::PeerId>)
+pub coqui_peer_webcrypto::Trust::Store(coqui_peer::store::TrustStore)
+impl coqui_peer_webcrypto::Trust
+pub fn coqui_peer_webcrypto::Trust::pinned(impl core::iter::traits::collect::IntoIterator<Item = coqui_peer::id::PeerId>) -> Self
+pub struct coqui_peer_webcrypto::Identity(_)
+impl coqui_peer_webcrypto::Identity
+pub fn coqui_peer_webcrypto::Identity::from_pkcs8_der(&[u8]) -> core::result::Result<Self, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Identity::from_pkcs8_pem(&str) -> core::result::Result<Self, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Identity::generate() -> core::result::Result<Self, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Identity::generate_with(&coqui_peer::random::Random) -> core::result::Result<Self, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Identity::key_material(&self) -> coqui_peer::key::KeyMaterial
+pub fn coqui_peer_webcrypto::Identity::open_or_create(&std::path::Path) -> core::result::Result<Self, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Identity::peer_id(&self) -> coqui_peer::id::PeerId
+pub fn coqui_peer_webcrypto::Identity::read(&std::path::Path) -> core::result::Result<core::option::Option<Self>, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Identity::spki_der(&self) -> &[u8; 91]
+pub fn coqui_peer_webcrypto::Identity::to_pkcs8_pem(&self) -> core::result::Result<zeroize::Zeroizing<alloc::string::String>, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Identity::write_new(&self, &std::path::Path) -> core::result::Result<(), coqui_peer_webcrypto::Error>
+impl core::fmt::Debug for coqui_peer_webcrypto::Identity
+pub fn coqui_peer_webcrypto::Identity::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct coqui_peer_webcrypto::Opener(_)
+impl coqui_peer_webcrypto::Opener
+pub fn coqui_peer_webcrypto::Opener::open(&mut self, &[u8]) -> core::result::Result<alloc::vec::Vec<u8>, coqui_peer_webcrypto::Error>
+impl core::fmt::Debug for coqui_peer_webcrypto::Opener
+pub fn coqui_peer_webcrypto::Opener::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct coqui_peer_webcrypto::Sealer(_)
+impl coqui_peer_webcrypto::Sealer
+pub fn coqui_peer_webcrypto::Sealer::seal(&mut self, &[u8]) -> core::result::Result<alloc::vec::Vec<u8>, coqui_peer_webcrypto::Error>
+impl core::fmt::Debug for coqui_peer_webcrypto::Sealer
+pub fn coqui_peer_webcrypto::Sealer::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct coqui_peer_webcrypto::Session
+impl coqui_peer_webcrypto::Session
+pub fn coqui_peer_webcrypto::Session::export(&self, &str, &mut [u8]) -> core::result::Result<(), coqui_peer_webcrypto::Error>
+pub const fn coqui_peer_webcrypto::Session::id(&self) -> &[u8; 32]
+pub const fn coqui_peer_webcrypto::Session::is_trusted(&self) -> bool
+pub fn coqui_peer_webcrypto::Session::open(&mut self, &[u8]) -> core::result::Result<alloc::vec::Vec<u8>, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Session::pair_channel(&self, &coqui_peer_webcrypto::Identity, coqui_peer::key::KeyMaterial) -> core::result::Result<coqui_peer::pair::Channel, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Session::seal(&mut self, &[u8]) -> core::result::Result<alloc::vec::Vec<u8>, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::Session::split(self) -> (coqui_peer_webcrypto::Sealer, coqui_peer_webcrypto::Opener)
+impl core::fmt::Debug for coqui_peer_webcrypto::Session
+pub fn coqui_peer_webcrypto::Session::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct coqui_peer_webcrypto::WebCrypto(_)
+impl coqui_peer_webcrypto::WebCrypto
+pub fn coqui_peer_webcrypto::WebCrypto::identity(&self) -> &coqui_peer_webcrypto::Identity
+pub fn coqui_peer_webcrypto::WebCrypto::new(coqui_peer_webcrypto::Identity) -> Self
+pub fn coqui_peer_webcrypto::WebCrypto::weakened(&self) -> alloc::vec::Vec<coqui_peer::weakening::Weakening>
+pub fn coqui_peer_webcrypto::WebCrypto::with_initiators(self, coqui_peer_webcrypto::Trust) -> Self
+pub fn coqui_peer_webcrypto::WebCrypto::with_max_message(self, usize) -> Self
+pub fn coqui_peer_webcrypto::WebCrypto::with_random(self, coqui_peer::random::Random) -> Self
+pub fn coqui_peer_webcrypto::WebCrypto::with_responders(self, coqui_peer_webcrypto::Trust) -> Self
+impl coqui_peer::method::Method for coqui_peer_webcrypto::WebCrypto
+pub type coqui_peer_webcrypto::WebCrypto::Handshake = coqui_peer_webcrypto::WebCryptoHandshake
+pub fn coqui_peer_webcrypto::WebCrypto::initiate(&self) -> core::result::Result<coqui_peer_webcrypto::WebCryptoHandshake, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::WebCrypto::name(&self) -> &'static str
+pub fn coqui_peer_webcrypto::WebCrypto::respond(&self, core::option::Option<core::net::socket_addr::SocketAddr>) -> core::result::Result<coqui_peer_webcrypto::WebCryptoHandshake, coqui_peer_webcrypto::Error>
+impl core::fmt::Debug for coqui_peer_webcrypto::WebCrypto
+pub fn coqui_peer_webcrypto::WebCrypto::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct coqui_peer_webcrypto::WebCryptoHandshake
+impl coqui_peer_webcrypto::WebCryptoHandshake
+pub fn coqui_peer_webcrypto::WebCryptoHandshake::with_binding(self, &[u8]) -> Self
+impl coqui_peer::method::Handshake for coqui_peer_webcrypto::WebCryptoHandshake
+pub type coqui_peer_webcrypto::WebCryptoHandshake::Error = coqui_peer_webcrypto::Error
+pub type coqui_peer_webcrypto::WebCryptoHandshake::Output = coqui_peer_webcrypto::Session
+pub fn coqui_peer_webcrypto::WebCryptoHandshake::finish(self) -> core::result::Result<coqui_peer::method::Established<coqui_peer_webcrypto::Session>, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::WebCryptoHandshake::framing(&self) -> coqui_peer::method::Framing
+pub fn coqui_peer_webcrypto::WebCryptoHandshake::is_complete(&self) -> bool
+pub fn coqui_peer_webcrypto::WebCryptoHandshake::receive(&mut self, &[u8]) -> core::result::Result<(), coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::WebCryptoHandshake::transmit(&mut self) -> core::result::Result<core::option::Option<alloc::vec::Vec<u8>>, coqui_peer_webcrypto::Error>
+impl core::fmt::Debug for coqui_peer_webcrypto::WebCryptoHandshake
+pub fn coqui_peer_webcrypto::WebCryptoHandshake::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub const coqui_peer_webcrypto::DEFAULT_MAX_MESSAGE: usize
+pub const coqui_peer_webcrypto::METHOD: &str
+pub const coqui_peer_webcrypto::PAIR_EXPORT_LABEL: &str
+pub const coqui_peer_webcrypto::PROFILE: &str
+pub fn coqui_peer_webcrypto::random() -> coqui_peer::random::Random

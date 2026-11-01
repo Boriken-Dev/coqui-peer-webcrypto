@@ -1,19 +1,153 @@
-# coqui-peer WebCrypto method
+# coqui-peer-webcrypto
 
-Canonical implementation of the draft p256-spki Coqui peer proof.
+[![Version](https://img.shields.io/crates/v/coqui-peer-webcrypto.svg)](https://crates.io/crates/coqui-peer-webcrypto)
+[![Rust version](https://img.shields.io/crates/msrv/coqui-peer-webcrypto.svg)](https://crates.io/crates/coqui-peer-webcrypto)
+[![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue.svg)](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/LICENSE)
+[![Docs](https://img.shields.io/docsrs/coqui-peer-webcrypto)](https://docs.rs/coqui-peer-webcrypto)
+[![CI](https://img.shields.io/github/actions/workflow/status/Boriken-Dev/coqui-peer-webcrypto/test.yml)](https://github.com/Boriken-Dev/coqui-peer-webcrypto/actions/workflows/test.yml)
 
-- JavaScript/WebCrypto initiator and responder: src/index.mjs
-- Native Rust responder implementing coqui_peer::Method and Handshake: native/src/lib.rs
-- Cross-language test harness: native/examples/responder_jsonl.rs, test/rust_interop.test.mjs
+**Two peers prove their P-256 keys to each other and end up with an encrypted session, in a browser
+or natively, through anything that carries their messages.** This is a method of
+[`coqui-peer`](https://crates.io/crates/coqui-peer), which holds the peer id, the trust store and the
+sans-IO handshake trait. It depends on no TLS session beneath it, so it works behind a
+TLS-terminating reverse proxy, and such a proxy can connect the two peers and nothing more. See the
+[documentation](https://boriken-dev.github.io/coqui-peer-webcrypto/) and the
+[wire protocol](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/PROTOCOL.md).
 
-The Rust implementation currently accepts **only explicitly allowlisted PeerId values** and does not enroll unknown clients. It presents its public SPKI identity for out-of-band verification. Use only over a protected reliable channel. The JSONL harness is for testing; it does **not** open a network socket, store trust, or implement ACP.
+> **Status: alpha, not independently reviewed.** The wire and the API may change in any release
+> before 1.0.
 
-## Verification
+## Features
 
-Run Node 22+ tests using npm test and Rust tests using cargo test --manifest-path native/Cargo.toml. The CI workflow also runs node --test test/rust_interop.test.mjs to authenticate an actual browser WebCrypto initiator against the Rust responder.
+- **Mutual key proof** over P-256 ECDSA: each side's signature names both keys, both nonces and both
+  ephemeral keys, in a role of its own, so a proof cannot be replayed, reflected or redirected.
+- **A session**: ephemeral ECDH gives an id both ends agree on, per-direction AES-256-GCM records and
+  exports. A party carrying the connection cannot read or change what goes through it.
+- **Trust from `coqui-peer`**: fixed pins, or a live `TrustStore` read at each handshake, with waiting
+  entries for proved strangers and rotation to a proved successor.
+- **PIN pairing on a session** (feature `pin`), bound to the session and not to any TLS.
+- **Both roles in both languages**: Rust here, and a dependency-free JavaScript module in
+  [`bindings/js/coqui-peer-webcrypto`](https://github.com/Boriken-Dev/coqui-peer-webcrypto/tree/main/bindings/js/coqui-peer-webcrypto)
+  that keeps its key non-extractable, tested against each other and in a real browser.
+- **Exactly one encoding** of every message and key, refused otherwise, with shared test vectors.
 
-The core coqui-peer Rust crate and TLS method are unchanged; the native method is an experimental, separate package pending protocol review, key persistence and production trust-store integration.
+## Installation
 
-## Native interoperability
+```bash
+cargo add coqui-peer-webcrypto@0.0.0-alpha.0
+```
 
-The native Rust responder is in `native/` and is exercised against the real JavaScript WebCrypto initiator in CI. It implements `coqui_peer::Method` and `Handshake` and can enforce a live `TrustStore` so revocations take effect on the next handshake. Run `cargo test --manifest-path native/Cargo.toml` and `node --test test/rust_interop.test.mjs` with Rust and Node 22 installed. The responder CLI is an integration harness, not an ACP/WebSocket network server; Canoa contains a separate WSS echo fixture.
+| Feature | Adds | Needed for | Default |
+| --- | --- | --- | --- |
+| `pin` | `coqui-peer/pin` (SPAKE2, HKDF, HMAC) | PIN pairing (`pair::Pairing::pin`) | off |
+
+Rust 1.89 or later. A default build depends on `coqui-peer`, `p256`, `aes-gcm`, `hkdf`, `sha2`,
+`data-encoding`, `serde`, `serde_json`, `getrandom` and `zeroize`.
+
+## Quick start
+
+Prove both keys over any message transport, then keep every message inside the session:
+
+```rust
+use std::sync::mpsc::{Receiver, Sender, channel};
+use std::{io, thread};
+
+use coqui_peer::{MessageTransport, Method, drive_messages};
+use coqui_peer_webcrypto::{Identity, Trust, WebCrypto};
+
+struct Pipe(Sender<Vec<u8>>, Receiver<Vec<u8>>);
+
+impl MessageTransport for Pipe {
+    fn send(&mut self, message: &[u8]) -> io::Result<()> {
+        self.0.send(message.to_vec()).map_err(|_| io::ErrorKind::BrokenPipe.into())
+    }
+    fn recv(&mut self) -> io::Result<Vec<u8>> {
+        self.1.recv().map_err(|_| io::ErrorKind::UnexpectedEof.into())
+    }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let (dialer, listener) = (Identity::generate()?, Identity::generate()?);
+    let client = WebCrypto::new(dialer.clone()).with_responders(Trust::pinned([listener.peer_id()]));
+    let server = WebCrypto::new(listener).with_initiators(Trust::pinned([dialer.peer_id()]));
+
+    let ((to_server, from_client), (to_client, from_server)) = (channel(), channel());
+    let serving = thread::spawn(move || {
+        let mut pipe = Pipe(to_client, from_client);
+        drive_messages(server.respond(None).expect("a role with trust"), &mut pipe)
+    });
+    let mut pipe = Pipe(to_server, from_server);
+    let at_client = drive_messages(client.initiate()?, &mut pipe)?;
+    let at_server = serving.join().expect("the thread ends")?;
+
+    assert_eq!(at_server.peer, dialer.peer_id());
+    let (mut near, mut far) = (at_client.session, at_server.session);
+    assert_eq!(near.id(), far.id());
+    let record = near.seal(b"anything the application says")?;
+    assert_eq!(far.open(&record)?, b"anything the application says");
+    Ok(())
+}
+```
+
+Identities live in files, as PKCS#8 PEM that `openssl genpkey` can also write:
+
+```rust,no_run
+use std::path::Path;
+
+use coqui_peer_webcrypto::Identity;
+
+# fn main() -> Result<(), coqui_peer_webcrypto::Error> {
+let identity = Identity::open_or_create(Path::new("identity.pem"))?;
+println!("tell your peer this id: {}", identity.peer_id());
+# Ok(())
+# }
+```
+
+## API overview
+
+Everything is at the crate root; the shipped `AGENTS.md` is the full header.
+
+| Item | Purpose |
+| --- | --- |
+| `Identity` | a long-term P-256 key: generate, read, write, id |
+| `Trust` | whom a role admits: pins, a store, or any proved key for pairing |
+| `WebCrypto`, `WebCryptoHandshake` | the `coqui_peer::Method` and its `Handshake` |
+| `Session`, `Sealer`, `Opener` | the id, records and exports a handshake ends in |
+| `Error` | why a handshake, a record or an identity failed |
+| `pair` | `coqui_peer::pair`, which runs on a session |
+
+## Behind a reverse proxy
+
+The handshake and session use nothing of the connection they run over. A proxy that ends TLS is a
+relay: it can forward, see public keys and record sizes, delay and cut. It cannot read or change a
+record, replace a key, or stand in for a pinned peer. This protection covers **only what goes through
+the session**: a plain message sent after the handshake comes from whoever carries the connection. A
+proxy that also serves a page's JavaScript can replace that JavaScript. The full table is in
+[PROTOCOL.md](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/PROTOCOL.md#through-a-relay).
+
+An endpoint that really ends TLS itself may also bind the handshake to that connection's exporter
+with `WebCryptoHandshake::with_binding`, which refuses a relay ending TLS on both sides.
+
+## Development
+
+```bash
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo clippy --no-default-features -- -D warnings
+cargo test --all-features
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
+cd bindings/js/coqui-peer-webcrypto && npm test
+```
+
+The Node tests run the Rust example in both roles and a real browser against it (Chrome or Edge, or
+`COQUI_TEST_BROWSER`), and report a skip where cargo or a browser is absent;
+`COQUI_PEER_WEBCRYPTO_REQUIRE_PEERS=1`, as in CI, makes that a failure.
+
+### Releasing
+
+`.github/workflows/release.yml` runs on a `v*` tag: it gates on the tests and a strict docs build,
+then creates the release from `CHANGELOG.md`. Every tag needs the maintainer's explicit go-ahead.
+
+## License
+
+[MPL-2.0](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/LICENSE).

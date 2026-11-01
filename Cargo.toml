@@ -1,19 +1,52 @@
 [package]
 name = "coqui-peer-webcrypto"
-version = "0.0.0"
-publish = false
+version = "0.0.0-alpha.0"
+description = "The WebCrypto method of coqui-peer: mutual P-256 key proof, in a browser or natively, ending in an encrypted session"
+readme = "README.md"
 edition = "2024"
 rust-version = "1.89"
 license = "MPL-2.0"
-description = "Experimental native browser-compatible P-256 Coqui peer method"
+repository = "https://github.com/Boriken-Dev/coqui-peer-webcrypto"
+homepage = "https://boriken-dev.github.io/coqui-peer-webcrypto/"
+keywords = ["webcrypto", "peer", "p256", "handshake", "browser"]
+categories = ["cryptography", "authentication", "network-programming"]
+exclude = [".*", "*.local.*", "/bindings/", "/tools/"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+# PIN pairing over a session: coqui-peer's `pin` (SPAKE2, HKDF, HMAC).
+pin = ["coqui-peer/pin"]
 
 [dependencies]
-coqui-peer = { path = "../../.." }
-p256 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
-rand_core = { version = "0.6", features = ["getrandom"] }
-base64 = "0.22"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# The peer id, trust store, pairing and handshake this crate is a method of. Alpha: the family's
+# crates are released together, at exact versions.
+coqui-peer = "=0.0.0-alpha.1"
+# ECDSA and ECDH over P-256, which is what WebCrypto offers everywhere. Pre-1.0: the RustCrypto
+# release line sharing sha2 and hkdf with coqui-peer.
+p256 = { version = "0.14", default-features = false, features = ["alloc", "ecdsa", "ecdh", "pkcs8"] }
+# The session's records. Pre-1.0: the same release line.
+aes-gcm = { version = "0.11", default-features = false, features = ["aes", "alloc", "zeroize"] }
+# The session's keys. Pre-1.0: the same release line, already in coqui-peer's `pin` build.
+hkdf = { version = "0.13", default-features = false }
+sha2 = { version = "0.11.1", default-features = false }
+# Strict base64url; already a dependency of coqui-peer.
+data-encoding = { version = "2", default-features = false, features = ["alloc"] }
+# The handshake messages.
+serde = { version = "1", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+# Nonces and keys.
+getrandom = { version = "0.4", default-features = false }
+# Zeroes key bytes when they are dropped.
+zeroize = { version = "1", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
+# Temporary store directories.
 tempfile = "3"
+
+[[test]]
+name = "pair"
+required-features = ["pin"]
