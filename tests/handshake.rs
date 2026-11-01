@@ -70,10 +70,9 @@ fn a_mutual_handshake_over_a_message_transport_yields_the_peers_and_one_session(
     assert_eq!(at_client.peer, server.peer_id());
     assert_eq!(at_server.peer, client.peer_id());
     assert_eq!(at_client.key.unwrap().bytes, server.spki_der().to_vec());
-    assert!(at_client.session.is_trusted());
     let record = at_server.session.seal(b"from the responder").unwrap();
     assert_eq!(
-        at_client.session.open(&record).unwrap(),
+        at_client.session.open(&record).unwrap().unwrap(),
         b"from the responder"
     );
 }
@@ -103,10 +102,10 @@ fn a_session_splits_for_a_reader_and_a_writer_on_two_threads() {
     let (mut far_sealer, mut far_opener) = at_server.session.split();
     let writer = thread::spawn(move || sealer.seal(b"up").unwrap());
     let up = writer.join().unwrap();
-    assert_eq!(far_opener.open(&up).unwrap(), b"up");
+    assert_eq!(far_opener.open(&up).unwrap().unwrap(), b"up");
     let down = far_sealer.seal(b"").unwrap();
     assert_eq!(
-        opener.open(&down).unwrap(),
+        opener.open(&down).unwrap().unwrap(),
         b"",
         "an empty message is a message"
     );
@@ -272,25 +271,11 @@ fn a_successor_needing_approval_is_refused_but_recorded_as_proven() {
 }
 
 #[test]
-fn any_key_with_proof_reports_an_unidentified_peer_and_a_weakening() {
-    let (client, server) = (Identity::generate().unwrap(), Identity::generate().unwrap());
-    let dialing = WebCrypto::new(client.clone()).with_responders(Trust::AnyWithKeyProof);
-    let listening = WebCrypto::new(server.clone()).with_initiators(Trust::AnyWithKeyProof);
-    let (at_client, at_server) = run(&dialing, &listening).unwrap();
-    assert_eq!(at_client.peer, server.peer_id());
-    assert_eq!(at_server.peer, client.peer_id());
-    assert!(!at_client.session.is_trusted());
-    assert!(!at_server.session.is_trusted());
-    assert_eq!(dialing.weakened()[0].setting, "responders");
-    assert_eq!(listening.weakened()[0].setting, "initiators");
-}
-
-#[test]
 fn a_self_connection_is_refused() {
     let identity = Identity::generate().unwrap();
     let method = WebCrypto::new(identity.clone())
-        .with_responders(Trust::AnyWithKeyProof)
-        .with_initiators(Trust::AnyWithKeyProof);
+        .with_responders(Trust::pinned([identity.peer_id()]))
+        .with_initiators(Trust::pinned([identity.peer_id()]));
     assert!(matches!(run(&method, &method), Err(Error::Malformed)));
 }
 
@@ -391,10 +376,7 @@ fn debug_and_display_show_no_key_and_no_input() {
     assert!(format!("{client:?}").contains(&client.peer_id().hex()));
     assert!(!format!("{dialing:?}").contains(&body));
     let (at_client, _) = run(&dialing, &listening).unwrap();
-    assert_eq!(
-        format!("{:?}", at_client.session),
-        "Session { trusted: true, .. }"
-    );
+    assert_eq!(format!("{:?}", at_client.session), "Session { .. }");
     let mut handshake = listening.respond(None).unwrap();
     let error = handshake.receive(b"attacker text").unwrap_err();
     assert!(!error.to_string().contains("attacker"));
@@ -411,4 +393,12 @@ fn drive_failure(dialing: &WebCrypto) -> DriveError<Error> {
     let error = drive_messages(dialing.initiate().unwrap(), &mut near);
     drop(far);
     error.unwrap_err()
+}
+
+#[test]
+fn a_replaced_random_source_is_listed_as_weakened() {
+    let (_, _, dialing, _) = pinned_pair();
+    assert!(dialing.weakened().is_empty());
+    let replaced = dialing.with_random(coqui_peer_webcrypto::random());
+    assert_eq!(replaced.weakened()[0].setting, "random");
 }

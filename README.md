@@ -21,11 +21,13 @@ TLS-terminating reverse proxy, and such a proxy can connect the two peers and no
 
 - **Mutual key proof** over P-256 ECDSA: each side's signature names both keys, both nonces and both
   ephemeral keys, in a role of its own, so a proof cannot be replayed, reflected or redirected.
-- **A session**: ephemeral ECDH gives an id both ends agree on, per-direction AES-256-GCM records and
-  exports. A party carrying the connection cannot read or change what goes through it.
+- **A session**: ephemeral ECDH gives an id both ends agree on, per-direction AES-256-GCM records, a
+  close record that makes a cut stream visible, a usage limit and exports. A party carrying the
+  connection cannot read or change what goes through it, or end it unseen.
 - **Trust from `coqui-peer`**: fixed pins, or a live `TrustStore` read at each handshake, with waiting
-  entries for proved strangers and rotation to a proved successor.
-- **PIN pairing on a session** (feature `pin`), bound to the session and not to any TLS.
+  entries for proved strangers, refused rather than evicted, and rotation to a proved successor.
+- **Pairing on a session of its own**, sealed and bound to the session and not to any TLS. A stranger's
+  session is a different type, which carries the exchange and nothing else (PIN needs feature `pin`).
 - **Both roles in both languages**: Rust here, and a dependency-free JavaScript module in
   [`bindings/js/coqui-peer-webcrypto`](https://github.com/Boriken-Dev/coqui-peer-webcrypto/tree/main/bindings/js/coqui-peer-webcrypto)
   that keeps its key non-extractable, tested against each other and in a real browser.
@@ -84,7 +86,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (mut near, mut far) = (at_client.session, at_server.session);
     assert_eq!(near.id(), far.id());
     let record = near.seal(b"anything the application says")?;
-    assert_eq!(far.open(&record)?, b"anything the application says");
+    assert_eq!(far.open(&record)?.as_deref(), Some(&b"anything the application says"[..]));
+    // The last record says the stream was not cut.
+    assert_eq!(far.open(&near.close()?)?, None);
+    far.verify_end()?;
     Ok(())
 }
 ```
@@ -110,18 +115,20 @@ Everything is at the crate root; the shipped `AGENTS.md` is the full header.
 | Item | Purpose |
 | --- | --- |
 | `Identity` | a long-term P-256 key: generate, read, write, id |
-| `Trust` | whom a role admits: pins, a store, or any proved key for pairing |
+| `Trust`, `WaitingGate` | whom a role admits: pins or a store; how proved strangers are queued |
 | `WebCrypto`, `WebCryptoHandshake` | the `coqui_peer::Method` and its `Handshake` |
-| `Session`, `Sealer`, `Opener` | the id, records and exports a handshake ends in |
-| `Error` | why a handshake, a record or an identity failed |
-| `pair` | `coqui_peer::pair`, which runs on a session |
+| `Session`, `Sealer`, `Opener` | the id, records, close and exports a handshake ends in |
+| `PairingMethod`, `PairingHandshake`, `PairingSession`, `PairDial` | a stranger's handshake, and the sealed pairing drivers it ends in |
+| `FramedStream` | a byte stream as a message transport that refuses a frame by its declared length |
+| `Error` | why a handshake, a record, a pairing or an identity failed |
+| `pair` | `coqui_peer::pair`, which runs on a `PairingSession` |
 
 ## Behind a reverse proxy
 
 The handshake and session use nothing of the connection they run over. A proxy that ends TLS is a
-relay: it can forward, see public keys and record sizes, delay and cut. It cannot read or change a
-record, replace a key, or stand in for a pinned peer. This protection covers **only what goes through
-the session**: a plain message sent after the handshake comes from whoever carries the connection. A
+relay: it can forward, see public keys and record sizes, delay and cut, and a cut is reported. It cannot
+read or change a record, replace a key, or stand in for a pinned peer. This protection covers **only
+what goes through the session**: a plain message sent after the handshake comes from whoever carries the connection. A
 proxy that also serves a page's JavaScript can replace that JavaScript. The full table is in
 [PROTOCOL.md](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/PROTOCOL.md#through-a-relay).
 

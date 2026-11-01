@@ -1,19 +1,22 @@
 use alloc::sync::Arc;
 use core::fmt;
-use std::io;
+use std::io::{self, Read as _};
 use std::path::Path;
 
 use coqui_peer::file::{self, Access};
-use coqui_peer::{KeyMaterial, PeerId, Random, pem};
+use coqui_peer::{KeyMaterial, PeerId, Random};
+use data_encoding::BASE64;
 use p256::ecdsa::SigningKey;
 use p256::pkcs8::{DecodePrivateKey, EncodePrivateKey};
-use zeroize::{Zeroize, Zeroizing};
+use zeroize::Zeroizing;
 
 use crate::error::Error;
 use crate::handshake::METHOD;
 use crate::message::{SPKI_LEN, Spki};
 
-const PEM_LABEL: &str = "PRIVATE KEY";
+const PEM_BEGIN: &str = "-----BEGIN PRIVATE KEY-----";
+const PEM_END: &str = "-----END PRIVATE KEY-----";
+const PEM_LINE: usize = 64;
 /// The label a [`KeyMaterial`] of this method carries, what standard tools read an SPKI under.
 const KEY_LABEL: &str = "PUBLIC KEY";
 /// Drawing an invalid scalar has a chance near 2^-32, so a source that keeps doing it is broken.
@@ -85,14 +88,27 @@ impl Identity {
     ///
     /// [`Error::Key`] when it is not a P-256 private key.
     pub fn from_pkcs8_pem(text: &str) -> Result<Self, Error> {
-        let mut block = pem::decode(text).ok_or(Error::Key)?;
-        let identity = if block.label == PEM_LABEL {
-            Self::from_pkcs8_der(&block.bytes)
-        } else {
-            Err(Error::Key)
-        };
-        block.bytes.zeroize();
-        identity
+        let mut lines = text.lines().map(str::trim);
+        if !lines.by_ref().any(|line| line == PEM_BEGIN) {
+            return Err(Error::Key);
+        }
+        // Sized up front: a buffer that grew would leave copies of the key in what it freed.
+        let mut body = Zeroizing::new(Vec::with_capacity(text.len()));
+        let mut ended = false;
+        for line in lines {
+            if line == PEM_END {
+                ended = true;
+                break;
+            }
+            body.extend_from_slice(line.as_bytes());
+        }
+        if !ended {
+            return Err(Error::Key);
+        }
+        let length = BASE64.decode_len(body.len()).map_err(|_| Error::Key)?;
+        let mut der = Zeroizing::new(vec![0u8; length]);
+        let written = BASE64.decode_mut(&body, &mut der).map_err(|_| Error::Key)?;
+        Self::from_pkcs8_der(&der[..written])
     }
 
     /// The key as PKCS#8 PEM text, zeroed when dropped.
@@ -102,7 +118,21 @@ impl Identity {
     /// [`Error::Key`] when it cannot be encoded.
     pub fn to_pkcs8_pem(&self) -> Result<Zeroizing<String>, Error> {
         let der = self.0.signing.to_pkcs8_der().map_err(|_| Error::Key)?;
-        Ok(Zeroizing::new(pem::encode(PEM_LABEL, der.as_bytes())))
+        let mut body = Zeroizing::new(vec![0u8; BASE64.encode_len(der.as_bytes().len())]);
+        BASE64.encode_mut(der.as_bytes(), &mut body);
+        let lines = body.len().div_ceil(PEM_LINE);
+        let mut pem = Zeroizing::new(String::with_capacity(
+            PEM_BEGIN.len() + PEM_END.len() + body.len() + lines + 2,
+        ));
+        pem.push_str(PEM_BEGIN);
+        pem.push('\n');
+        for line in body.chunks(PEM_LINE) {
+            pem.push_str(core::str::from_utf8(line).map_err(|_| Error::Key)?);
+            pem.push('\n');
+        }
+        pem.push_str(PEM_END);
+        pem.push('\n');
+        Ok(pem)
     }
 
     /// The key in the file at `path`, or `None` when there is no file.
@@ -111,11 +141,17 @@ impl Identity {
     ///
     /// [`Error::Io`] when it cannot be read, [`Error::Key`] when it is not such a key.
     pub fn read(path: &Path) -> Result<Option<Self>, Error> {
-        match std::fs::read_to_string(path) {
-            Ok(text) => Self::from_pkcs8_pem(&Zeroizing::new(text)).map(Some),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
-            Err(error) => Err(error.into()),
-        }
+        let mut file = match std::fs::File::open(path) {
+            Ok(file) => file,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(error.into()),
+        };
+        let size = usize::try_from(file.metadata()?.len()).map_err(|_| Error::Key)?;
+        // Room for one more byte, so reading to the end never has to grow the buffer.
+        let mut bytes = Zeroizing::new(Vec::with_capacity(size.saturating_add(1)));
+        file.read_to_end(&mut bytes)?;
+        let text = core::str::from_utf8(&bytes).map_err(|_| Error::Key)?;
+        Self::from_pkcs8_pem(text).map(Some)
     }
 
     /// Writes the key to a new file at `path`, creating its parents. It never replaces a file.

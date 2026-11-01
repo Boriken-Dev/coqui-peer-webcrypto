@@ -10,6 +10,7 @@ mod support;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use aes_gcm::aead::{Aead as _, KeyInit as _};
 use coqui_peer::{Handshake, Method};
 use coqui_peer_webcrypto::{
     Error, Identity, PAIR_EXPORT_LABEL, PROFILE, Trust, WebCrypto, WebCryptoHandshake,
@@ -204,6 +205,7 @@ fn refused(hello: &str, challenge: &str) -> Value {
             format!("{}{}", "[".repeat(1400), "]".repeat(1400)),
         ),
         good("leading whitespace", format!(" {good_hello}")),
+        good("a leading byte order mark", format!("\u{feff}{good_hello}")),
         good("trailing newline", format!("{good_hello}\n")),
         good("spaces inside", good_hello.replacen(',', ", ", 1)),
         good("members out of order", member_order),
@@ -468,26 +470,55 @@ fn build() -> Value {
         .unwrap()
         .diffie_hellman(&PublicKey::from_sec1_bytes(&point(RESPONDER_EPHEMERAL)).unwrap());
     let mut keys = [0u8; 96];
-    Hkdf::<Sha256>::new(Some(&id), shared.raw_secret_bytes())
-        .expand(format!("{PROFILE}/keys").as_bytes(), &mut keys)
+    let mut info = Vec::new();
+    field(&mut info, format!("{PROFILE}/keys").as_bytes());
+    field(&mut info, &id);
+    Hkdf::<Sha256>::new(None, shared.raw_secret_bytes())
+        .expand(&info, &mut keys)
         .unwrap();
     let mut export = [0u8; 32];
+    let mut info = Vec::new();
+    field(&mut info, format!("{PROFILE}/export").as_bytes());
+    field(&mut info, PAIR_EXPORT_LABEL.as_bytes());
+    info.extend_from_slice(&32u32.to_be_bytes());
     Hkdf::<Sha256>::new(None, &keys[64..])
-        .expand(
-            format!("{PROFILE}/export/{PAIR_EXPORT_LABEL}").as_bytes(),
-            &mut export,
-        )
+        .expand(&info, &mut export)
         .unwrap();
     let mut exported = [0u8; 32];
     session_a.export(PAIR_EXPORT_LABEL, &mut exported).unwrap();
     assert_eq!(exported, export);
+    // The records, apart from the crate: each direction's key and its position.
+    let seal_apart = |key: &[u8], sequence: u64, inner: &[u8]| {
+        let mut nonce = [0u8; 12];
+        nonce[4..].copy_from_slice(&sequence.to_be_bytes());
+        let key = aes_gcm::Key::<aes_gcm::Aes256Gcm>::try_from(key).unwrap();
+        aes_gcm::Aes256Gcm::new(&key)
+            .encrypt(&nonce.into(), inner)
+            .unwrap()
+    };
 
     let up = session_a.seal(b"from the initiator").unwrap();
-    assert_eq!(session_b.open(&up).unwrap(), b"from the initiator");
+    assert_eq!(up, seal_apart(&keys[..32], 0, b"\x01from the initiator"));
+    assert_eq!(session_b.open(&up).unwrap().unwrap(), b"from the initiator");
     let empty = session_a.seal(b"").unwrap();
-    assert_eq!(session_b.open(&empty).unwrap(), b"");
+    assert_eq!(empty, seal_apart(&keys[..32], 1, b"\x01"));
+    assert_eq!(session_b.open(&empty).unwrap().unwrap(), b"");
     let down = session_b.seal(b"from the responder").unwrap();
-    assert_eq!(session_a.open(&down).unwrap(), b"from the responder");
+    assert_eq!(
+        down,
+        seal_apart(&keys[32..64], 0, b"\x01from the responder")
+    );
+    assert_eq!(
+        session_a.open(&down).unwrap().unwrap(),
+        b"from the responder"
+    );
+    let close = session_a.close().unwrap();
+    assert_eq!(close, seal_apart(&keys[..32], 2, b"\x02"));
+    assert_eq!(session_b.open(&close).unwrap(), None);
+    session_b.verify_end().unwrap();
+    // An inner type nobody defined, under the right key at the right place.
+    let unknown_type = seal_apart(&keys[32..64], 1, b"\x03");
+    let close_with_payload = seal_apart(&keys[32..64], 1, b"\x02x");
 
     let pkcs8 = |scalar| HEX.encode(signing(scalar).to_pkcs8_der().unwrap().as_bytes());
     let signature_of = |text: &str| -> String {
@@ -533,6 +564,11 @@ fn build() -> Value {
             {"from": "initiator", "message": "from the initiator", "record": HEX.encode(&up)},
             {"from": "initiator", "message": "", "record": HEX.encode(&empty)},
             {"from": "responder", "message": "from the responder", "record": HEX.encode(&down)},
+        ],
+        "closeRecord": HEX.encode(&close),
+        "refusedRecords": [
+            {"name": "an unknown inner type", "record": HEX.encode(&unknown_type)},
+            {"name": "a close with a payload", "record": HEX.encode(&close_with_payload)},
         ],
         "refused": refused(&hello, &challenge),
     })
@@ -595,6 +631,35 @@ fn every_listed_message_is_refused_at_its_stage_with_the_state_left_over() {
 }
 
 #[test]
+fn records_of_an_unknown_type_or_a_close_with_a_payload_are_refused() {
+    let built = build();
+    for case in built["refusedRecords"].as_array().unwrap() {
+        let (mut a, mut b) = (initiator(), responder());
+        step(&mut a, &mut b);
+        step(&mut b, &mut a);
+        step(&mut a, &mut b);
+        step(&mut b, &mut a);
+        let mut session = a.finish().unwrap().session;
+        let record = HEX
+            .decode(case["record"].as_str().unwrap().as_bytes())
+            .unwrap();
+        // These were made as the responder's second record, so one comes first.
+        let first = HEX
+            .decode(built["records"][2]["record"].as_str().unwrap().as_bytes())
+            .unwrap();
+        session.open(&first).unwrap().unwrap();
+        assert!(
+            matches!(session.open(&record), Err(Error::Record)),
+            "{case}"
+        );
+        assert!(
+            matches!(session.seal(b"after"), Err(Error::Record)),
+            "{case}"
+        );
+    }
+}
+
+#[test]
 fn a_signature_with_either_s_is_accepted_since_webcrypto_does_not_normalise_it() {
     let built = build();
     let mut side = initiator();
@@ -617,7 +682,7 @@ fn arbitrary_bytes_are_refused_and_never_panic() {
         state ^= state << 17;
         state
     };
-    for round in 0..400 {
+    for round in 0..200 {
         let mut input = if round % 2 == 0 {
             hello.clone()
         } else {

@@ -1,9 +1,12 @@
 //! One end of the handshake and an echo over stdin and stdout, for the JavaScript interoperability
 //! tests. Not a network server: handshake messages are lines, records are lines of hex.
 //!
-//! `peer_jsonl responder <client id>`: prints `{"peerId":...}`, answers, echoes records.
+//! `peer_jsonl responder <client id>`: prints `{"peerId":...}`, answers, echoes records, and answers
+//! a close with its own.
 //! `peer_jsonl initiator`: prints `{"peerId":...}`, reads the responder's id as a line, dials, sends
-//! one sealed record, checks the echo.
+//! one sealed record, checks the echo, closes.
+//!
+//! A refused handshake exits with status 3; a stream that ends with no close record, with status 4.
 
 use std::io::{self, BufRead, Write};
 
@@ -18,6 +21,10 @@ fn line(stdout: &mut impl Write, bytes: &[u8]) -> Result<(), Failure> {
     stdout.write_all(b"\n")?;
     stdout.flush()?;
     Ok(())
+}
+
+fn record(stdout: &mut impl Write, bytes: &[u8]) -> Result<(), Failure> {
+    line(stdout, HEXLOWER.encode(bytes).as_bytes())
 }
 
 fn next(lines: &mut impl Iterator<Item = io::Result<String>>) -> Result<String, Failure> {
@@ -69,21 +76,27 @@ fn main() -> Result<(), Failure> {
     };
     eprintln!("verified {}", established.peer);
     let mut session = established.session;
-    line(&mut stdout, HEXLOWER.encode(session.id()).as_bytes())?;
+    record(&mut stdout, session.id())?;
     if role == "responder" {
         for text in lines {
-            let opened = session.open(&hex(&text?)?)?;
+            let Some(opened) = session.open(&hex(&text?)?)? else {
+                record(&mut stdout, &session.close()?)?;
+                break;
+            };
             let reply = [b"echo:".as_slice(), &opened].concat();
-            line(
-                &mut stdout,
-                HEXLOWER.encode(&session.seal(&reply)?).as_bytes(),
-            )?;
+            record(&mut stdout, &session.seal(&reply)?)?;
         }
     } else {
-        let record = session.seal(b"ping from rust")?;
-        line(&mut stdout, HEXLOWER.encode(&record).as_bytes())?;
+        record(&mut stdout, &session.seal(b"ping from rust")?)?;
         let reply = session.open(&hex(&next(&mut lines)?)?)?;
-        line(&mut stdout, &reply)?;
+        line(&mut stdout, &reply.ok_or("closed early")?)?;
+        record(&mut stdout, &session.close()?)?;
+        let end = session.open(&hex(&next(&mut lines)?)?)?;
+        assert!(end.is_none(), "the peer's close record");
+    }
+    if let Err(error) = session.verify_end() {
+        eprintln!("ended: {error:?}");
+        std::process::exit(4);
     }
     Ok(())
 }

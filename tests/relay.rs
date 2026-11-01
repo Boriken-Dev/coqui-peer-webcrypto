@@ -73,7 +73,7 @@ fn a_plain_relay_connects_only_the_real_parties_and_they_agree_on_one_session() 
     }
     assert!(!record.windows(6).any(|window| window == b"secret"));
     assert_eq!(
-        server_session.open(&record).unwrap(),
+        server_session.open(&record).unwrap().unwrap(),
         b"secret from the relay"
     );
 }
@@ -133,7 +133,7 @@ fn a_relay_cannot_swap_replay_reorder_or_reflect_a_record() {
         matches!(client.open(&mine), Err(Error::Record)),
         "reflected"
     );
-    assert_eq!(server.open(&mine).unwrap(), b"one");
+    assert_eq!(server.open(&mine).unwrap().unwrap(), b"one");
     assert!(matches!(server.open(&mine), Err(Error::Record)), "replayed");
     drop(record);
 
@@ -144,7 +144,7 @@ fn a_relay_cannot_swap_replay_reorder_or_reflect_a_record() {
         matches!(server.open(&theirs), Err(Error::Record)),
         "reflected at the responder"
     );
-    assert_eq!(client.open(&theirs).unwrap(), b"back");
+    assert_eq!(client.open(&theirs).unwrap().unwrap(), b"back");
 
     let (at_client, at_server) = run(&dialing, &listening).unwrap();
     let (mut client, mut server) = (at_client.session, at_server.session);
@@ -161,8 +161,9 @@ fn swapping_the_initiators_key_in_the_hello_fails_the_responders_proof() {
     let (_, server, dialing, _) = pinned_pair();
     let attacker = Identity::generate().unwrap();
     // The responder admits the attacker, so only the proof can stop this.
-    let listening = WebCrypto::new(server).with_initiators(Trust::AnyWithKeyProof);
-    let attacker_side = WebCrypto::new(attacker).with_responders(Trust::AnyWithKeyProof);
+    let listening =
+        WebCrypto::new(server.clone()).with_initiators(Trust::pinned([attacker.peer_id()]));
+    let attacker_side = WebCrypto::new(attacker).with_responders(Trust::pinned([server.peer_id()]));
     let attacker_hello = attacker_side
         .initiate()
         .unwrap()
@@ -189,12 +190,7 @@ fn swapping_the_responders_key_for_a_relays_own_fails_the_pin() {
     let relaying = WebCrypto::new(relay).with_initiators(Trust::pinned([client.peer_id()]));
     let (mut a, mut b) = (dialing.initiate().unwrap(), relaying.respond(None).unwrap());
     assert!(matches!(exchange(&mut a, &mut b), Err(Error::Untrusted)));
-
-    // And when the client does not pin, the proven id says who it reached: not the server.
-    let open = WebCrypto::new(client.clone()).with_responders(Trust::AnyWithKeyProof);
-    let (at_client, _) = run(&open, &relaying).unwrap();
-    assert_ne!(at_client.peer, server.peer_id());
-    assert!(!at_client.session.is_trusted());
+    assert_ne!(relaying.identity().peer_id(), server.peer_id());
 }
 
 #[test]
@@ -258,8 +254,16 @@ fn an_outer_binding_is_optional_and_refuses_two_different_channels() {
     let (_, _, dialing, listening) = pinned_pair();
     // Each end really ended one TLS connection, and read one exporter.
     let (mut a, mut b) = (
-        dialing.initiate().unwrap().with_binding(b"exporter"),
-        listening.respond(None).unwrap().with_binding(b"exporter"),
+        dialing
+            .initiate()
+            .unwrap()
+            .with_binding(b"exporter")
+            .unwrap(),
+        listening
+            .respond(None)
+            .unwrap()
+            .with_binding(b"exporter")
+            .unwrap(),
     );
     exchange(&mut a, &mut b).unwrap();
     let (at_client, at_server) = (a.finish().unwrap(), b.finish().unwrap());
@@ -270,11 +274,13 @@ fn an_outer_binding_is_optional_and_refuses_two_different_channels() {
         dialing
             .initiate()
             .unwrap()
-            .with_binding(b"exporter of leg one"),
+            .with_binding(b"exporter of leg one")
+            .unwrap(),
         listening
             .respond(None)
             .unwrap()
-            .with_binding(b"exporter of leg two"),
+            .with_binding(b"exporter of leg two")
+            .unwrap(),
     );
     assert!(matches!(exchange(&mut a, &mut b), Err(Error::BadProof)));
 }
@@ -290,4 +296,27 @@ fn an_export_is_the_same_at_both_ends_and_a_relay_cannot_derive_it_from_the_id()
     assert_eq!(one, two);
     assert_ne!(one, other);
     assert_ne!(&one, at_client.session.id());
+}
+
+#[test]
+fn a_binding_set_after_the_first_message_is_refused() {
+    let (_, _, dialing, listening) = pinned_pair();
+    let (mut a, mut b) = (
+        dialing.initiate().unwrap(),
+        listening.respond(None).unwrap(),
+    );
+    b.receive(&a.transmit().unwrap().unwrap()).unwrap();
+    assert!(matches!(b.with_binding(b"late"), Err(Error::State)));
+    a.receive(b"").unwrap_err();
+    assert!(matches!(a.with_binding(b"late"), Err(Error::State)));
+}
+
+#[test]
+fn exports_of_one_label_and_two_lengths_are_unrelated() {
+    let (_, _, dialing, listening) = pinned_pair();
+    let (at_client, _) = run(&dialing, &listening).unwrap();
+    let (mut short, mut long) = ([0u8; 16], [0u8; 32]);
+    at_client.session.export("label", &mut short).unwrap();
+    at_client.session.export("label", &mut long).unwrap();
+    assert_ne!(short, long[..16]);
 }

@@ -12,18 +12,24 @@
 extern crate alloc;
 
 mod error;
+mod framed;
 mod handshake;
 mod identity;
 mod message;
+mod pairing;
 mod session;
 mod transcript;
 mod trust;
 
 pub use coqui_peer::pair;
-pub use coqui_peer::{Established, KeyMaterial, Method, PeerId, Random, TrustStore, Weakening};
+pub use coqui_peer::{
+    Established, KeyMaterial, MessageTransport, Method, PeerId, Random, TrustStore, Weakening,
+};
 pub use error::Error;
+pub use framed::FramedStream;
 pub use handshake::{METHOD, WebCrypto, WebCryptoHandshake, random};
 pub use identity::Identity;
 pub use message::{DEFAULT_MAX_MESSAGE, PROFILE};
-pub use session::{Opener, PAIR_EXPORT_LABEL, Sealer, Session};
-pub use trust::Trust;
+pub use pairing::{PAIR_EXPORT_LABEL, PairDial, PairingHandshake, PairingMethod, PairingSession};
+pub use session::{DEFAULT_SESSION_LIMIT, Opener, Sealer, Session};
+pub use trust::{Trust, WaitingGate};

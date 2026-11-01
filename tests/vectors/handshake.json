@@ -1,5 +1,6 @@
 {
   "challengeOtherS": "{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"challenge\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPNQGF6JU3LfYiHqOhN1V-Rz_dtnVfBb1QfDxTP86ckShQ\",\"ephemeral\":\"BFs2iQ2svXyalrt0oe4os9LXW3LgmiDvJc-Ob9ip8DUNDhS-2NRoKjTYNTi9_1uW6JpmZuwNtXRdAvoSEAct91o\",\"nonce\":\"srKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrI\",\"signature\":\"gwnxsvKeTDVD0VlfW5eVU5BuW-BunZ4SeYwfOQV1-V6D_1KBCZfQlKPvkNPL66E-9WVYJ5HtI2dI9SJ50mIl4A\"}",
+  "closeRecord": "5ef317cfaa1cdf9fce57f9a036017c748f",
   "initiator": {
     "ephemeralPoint": "0451a7580833898ea1b183cbd7350a4099078c6ef1c1e18e970cd7683035f25e7d0110522712b0b5a7cff081685486984a94e6831edac46e7360fa9d834a7a81a1",
     "ephemeralScalar": "3333333333333333333333333333333333333333333333333333333333333333",
@@ -19,17 +20,17 @@
     {
       "from": "initiator",
       "message": "from the initiator",
-      "record": "799184a0f84ecf4c27686a3e8b5bc8bd854102a8efe836594ca60ffab56309c68499"
+      "record": "0e4d9190ceda18bc0e6e24c691039f09884837415b96615ed7d92a2d1e8636b2a7e3fa"
     },
     {
       "from": "initiator",
       "message": "",
-      "record": "3cb1516fe6210b4b2c7f1fbc1db4813a"
+      "record": "4ac566244ca1cd2c420afbb699b63a67a7"
     },
     {
       "from": "responder",
       "message": "from the responder",
-      "record": "3244bb09fab4b38420ce7868ede2ebc2e462c9e628e7e3bb7540d7d0d07fd0a1de5f"
+      "record": "c9ee771ca602577116f32a39bd70d2ad41ac1487df2de469463137b3925490f2f85bbd"
     }
   ],
   "refused": [
@@ -56,6 +57,11 @@
     {
       "message": " {\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
       "name": "leading whitespace",
+      "stage": "hello"
+    },
+    {
+      "message": "﻿{\"profile\":\"dev.boriken.coqui.peer-webcrypto/v1\",\"version\":1,\"type\":\"hello\",\"publicKey\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA\",\"ephemeral\":\"BFGnWAgziY6hsYPL1zUKQJkHjG7xweGOlwzXaDA18l59ARBSJxKwtafP8IFoVIaYSpTmgx7axG5zYPqdg0p6gaE\",\"nonce\":\"oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE\"}",
+      "name": "a leading byte order mark",
       "stage": "hello"
     },
     {
@@ -314,6 +320,16 @@
       "stage": "accept"
     }
   ],
+  "refusedRecords": [
+    {
+      "name": "an unknown inner type",
+      "record": "6f4087edb86e56d37e4cc6ce3013a4050c"
+    },
+    {
+      "name": "a close with a payload",
+      "record": "6e6287c42875742389737122647a421d341d"
+    }
+  ],
   "responder": {
     "ephemeralPoint": "045b36890dacbd7c9a96bb74a1ee28b3d2d75b72e09a20ef25cf8e6fd8a9f0350d0e14bed8d4682a34d83538bdff5b96e89a6666ec0db5745d02fa1210072df75a",
     "ephemeralScalar": "4444444444444444444444444444444444444444444444444444444444444444",
@@ -323,11 +339,11 @@
     "spki": "3059301306072a8648ce3d020106082a8648ce3d03010703420004d65a93977caa3d1b081852ff57a79e465f1660577304baead505dd3a48589cf350185e895372df6221ea3a137557e473fddb6755f05bd507c3c533fce9c91285"
   },
   "session": {
-    "exporter": "1e8a77afb32c4be8e8c7a30588c9a2f0e567d789cc3e39448c9aeb773157afff",
+    "exporter": "64405d7ce73f77ae4ca430871621bef97d63a0cc5ec1fd4562c4b1f090be3a4d",
     "id": "0e0408a72f6567dc6daa7b93e38144b8ee5eb5c9c0915018fff28b0fb384b00e",
-    "initiatorKey": "66079aaa42f99f6cf929f7829b8a195a27f78f2d8aa8046a97fdc5ecaaf1af42",
-    "pairExport": "33252a5a97753fbf57c884da4ebe7e21777df3eaac56e3066362dafba4a34858",
-    "responderKey": "07eab5e7b4e7a9d956c5258fc2cace4642ed1a799718ceccd67f21549d584d9f",
+    "initiatorKey": "4bb170cb1c3fc248467c5c0381016f4bda79fd4014879645d68250a3c2ebcdc0",
+    "pairExport": "a10bf55833e3433210d66255e603dfab923381bd1f559fe70929c62a24a3bae6",
+    "responderKey": "38b507beea9ccc822a1926a15c9d9d6e00fbdb180343c2b7ff8ed859231a59b3",
     "shared": "5238f9f956812e75918895390fa057a2063aa66d4d5eefbe6ecdcf78342d2922"
   },
   "signed": {

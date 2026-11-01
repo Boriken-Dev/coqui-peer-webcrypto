@@ -16,10 +16,13 @@ a pre-release with no independent security review; the wire and API may change i
 `Handshake`, `pair`); its API header ships in that crate. `PROTOCOL.md` ships here and is the wire.
 
 Imports: everything is at the crate root, including re-exports of `coqui-peer`'s `Established`,
-`KeyMaterial`, `Method`, `PeerId`, `Random`, `TrustStore`, `Weakening` and its module `pair`.
+`KeyMaterial`, `MessageTransport`, `Method`, `PeerId`, `Random`, `TrustStore`, `Weakening` and its module
+`pair`.
 
 No `unsafe` code (`#![forbid(unsafe_code)]`), no process-wide state. Nothing reads a file or an
-environment variable unless the caller names a path. Secrets are zeroed when dropped.
+environment variable unless the caller names a path. Ephemeral scalars, traffic keys, the export secret,
+long-term keys and PEM text are held on the heap and zeroed when dropped; copies a move leaves on the
+stack, and the stack state of `p256`, `hkdf`, `sha2` and `aes-gcm`, are not.
 
 ## Identity (`coqui_peer_webcrypto::Identity`)
 
@@ -47,8 +50,10 @@ PKCS#8 key (SEC1 `EC PRIVATE KEY` is not), `Error::Io` for the file, `Error::Ran
 
 ```rust
 #[non_exhaustive]
-pub enum Trust { Pinned(BTreeSet<PeerId>), Store(TrustStore), AnyWithKeyProof }
+pub enum Trust { Pinned(BTreeSet<PeerId>), Store(TrustStore) }
 impl Trust { pub fn pinned(ids: impl IntoIterator<Item = PeerId>) -> Trust; }
+pub struct WaitingGate { pub per_source: usize, pub interval: Duration, pub ipv6_prefix: u8 }
+// Default: 16, 1 s, 64. Copy, Eq
 ```
 
 Decided after the peer proved its key, never before.
@@ -57,11 +62,17 @@ Decided after the peer proved its key, never before.
   nothing.
 - `Store`: read at each handshake, so a key removed or retired is refused from the next handshake on.
   The stored key must be of this method. A responder records a proved stranger with
-  `record_waiting`, under the `source` given to `respond`; an initiator records nobody. The proved
-  pending successor of an accepted key gets `prove_successor`, then `promote_successor` unless
-  `RotationOptions::require_approval`, in which case it is refused until the caller promotes it.
-- `AnyWithKeyProof`: anyone who proves a key. For a connection that only runs `pair`, never one that
-  serves anything. `Session::is_trusted` is false and `WebCrypto::weakened` lists it.
+  `record_waiting`, under the `source` given to `respond`, subject to its `WaitingGate`; an initiator
+  records nobody. The proved pending successor of an accepted key gets `prove_successor`, then
+  `promote_successor` unless `RotationOptions::require_approval`, in which case it is refused until the
+  caller promotes it.
+- There is no way to admit anyone here: a stranger's session is a `PairingSession`.
+
+`WaitingGate`: a new stranger is recorded at most once per `interval` on the store's clock, and a source
+holding `per_source` entries refuses it and keeps those waiting. A flood can fill a source; it cannot
+remove anyone. Keep `per_source` at or below the store's `WaitingLimits::per_source`, or the store
+replaces its oldest. Behind a reverse proxy every peer shares the proxy's source, unless the caller passes
+the client's address from a header it trusts.
 
 ## The method (`coqui_peer_webcrypto::{WebCrypto, WebCryptoHandshake, METHOD, random}`)
 
@@ -76,21 +87,32 @@ impl WebCrypto {
     pub fn with_responders(self, trust: Trust) -> WebCrypto;     // whom initiate() admits
     pub fn with_initiators(self, trust: Trust) -> WebCrypto;     // whom respond() admits
     pub fn with_max_message(self, bytes: usize) -> WebCrypto;    // before parsing; no floor
+    pub fn with_session_limit(self, bytes: u64) -> WebCrypto;    // per direction; DEFAULT_SESSION_LIMIT; no floor
+    pub fn with_waiting_gate(self, gate: WaitingGate) -> WebCrypto;
     pub fn with_random(self, random: Random) -> WebCrypto;       // secure, or for test vectors only
     pub fn identity(&self) -> &Identity;
-    pub fn weakened(&self) -> Vec<Weakening>;                    // any-with-proof; a larger max_message
+    pub fn weakened(&self) -> Vec<Weakening>;  // a replaced random; larger limits; a looser gate
 }
 impl coqui_peer::Method for WebCrypto { /* name() = "webcrypto"; initiate(); respond(source) */ }
 pub struct WebCryptoHandshake;
 impl WebCryptoHandshake {
-    pub fn with_binding(self, binding: &[u8]) -> WebCryptoHandshake;   // before the first receive
+    pub fn with_binding(self, binding: &[u8]) -> Result<WebCryptoHandshake, Error>;   // Error::State after the first receive
 }
+pub struct FramedStream<S>;                   // Debug
+impl<S> FramedStream<S> {
+    pub const fn new(stream: S, max_message: usize) -> FramedStream<S>;
+    pub const fn set_max_message(&mut self, max_message: usize);
+    pub fn into_inner(self) -> S;
+}
+// MessageTransport for S: Read + Write; ReadTimeout and WriteTimeout as S has them
 impl coqui_peer::Handshake for WebCryptoHandshake { /* Output = Session, Framing::Message */ }
 ```
 
-Run it with `coqui_peer::drive_messages` over a reliable, ordered message transport, `drive_stream`
-over a byte stream (it length-prefixes), their `_until` forms for a deadline (nothing here reads a
-clock, so **the caller bounds the handshake**), or a `receive`/`transmit` loop. `initiate` has the
+Run it with `coqui_peer::drive_messages` over a reliable, ordered message transport, `drive_messages`
+over a `FramedStream` for a byte stream (`coqui_peer::drive_stream` also works, and takes up to 1 MiB
+before the message limit applies; `FramedStream` refuses a frame by its declared length, with an
+`InvalidData` I/O error), their `_until` forms for a deadline (**the caller bounds the handshake**), or a
+`receive`/`transmit` loop. `initiate` has the
 hello ready to `transmit`; `Error::Unsupported` without trust for that role. `finish` gives
 `Established { peer, key: Some(key), session }`.
 
@@ -98,60 +120,103 @@ hello ready to `transmit`; `Error::Unsupported` without trust for that role. `fi
 exporter at both ends, and a relay ending TLS on both sides fails with `Error::BadProof`. Never set it
 through a reverse proxy, where the two ends read different values. It is never sent.
 
-## The session (`coqui_peer_webcrypto::{Session, Sealer, Opener, PAIR_EXPORT_LABEL}`)
+## The session (`coqui_peer_webcrypto::{Session, Sealer, Opener, DEFAULT_SESSION_LIMIT}`)
 
 ```rust
-pub const PAIR_EXPORT_LABEL: &str = "EXPORTER-coqui-pair";
-pub struct Session;                           // Debug shows only whether the peer is trusted
+pub const DEFAULT_SESSION_LIMIT: u64 = 1 << 38;   // each record counts its length and 32
+pub struct Session;                           // Debug shows nothing
 impl Session {
     pub fn id(&self) -> &[u8; 32];            // both ends agree; not secret
     pub fn seal(&mut self, message: &[u8]) -> Result<Vec<u8>, Error>;
-    pub fn open(&mut self, record: &[u8]) -> Result<Vec<u8>, Error>;
+    pub fn close(&mut self) -> Result<Vec<u8>, Error>;        // the last record of this direction
+    pub fn open(&mut self, record: &[u8]) -> Result<Option<Vec<u8>>, Error>;  // None: the peer's close
+    pub fn verify_end(&self) -> Result<(), Error>;            // call when the transport ended
     pub fn split(self) -> (Sealer, Opener);   // a reader and a writer on two threads; export first
     pub fn export(&self, label: &str, out: &mut [u8]) -> Result<(), Error>;   // at most 8160 bytes
-    pub fn is_trusted(&self) -> bool;         // false under Trust::AnyWithKeyProof
-    pub fn pair_channel(&self, local: &Identity, remote: KeyMaterial) -> Result<pair::Channel, Error>;
 }
-impl Sealer { pub fn seal(&mut self, message: &[u8]) -> Result<Vec<u8>, Error>; }
-impl Opener { pub fn open(&mut self, record: &[u8]) -> Result<Vec<u8>, Error>; }
+impl Sealer { pub fn seal(&mut self, message: &[u8]) -> Result<Vec<u8>, Error>;
+              pub fn close(&mut self) -> Result<Vec<u8>, Error>; }
+impl Opener { pub fn open(&mut self, record: &[u8]) -> Result<Option<Vec<u8>>, Error>;
+              pub fn verify_end(&self) -> Result<(), Error>; }
 ```
 
 Each message is one record, sent whole and in order on a reliable transport; a record is the message
-plus 16 bytes, and is not UTF-8, so a WebSocket carries it in binary frames. Any failure to open ends
-that direction: `Error::Record` on every later call, and the caller closes the connection. Keep every
-application message inside the session: **a plain message on the same transport comes from whoever
-carries it**, even after a successful handshake.
+plus 17 bytes, and is not UTF-8, so a WebSocket carries it in binary frames.
 
-## Pairing (`coqui_peer_webcrypto::pair`, feature `pin` for a PIN)
+**End every stream with `close`, and call `verify_end` when the transport ends.** A relay can cut the
+connection at any record boundary; `verify_end` is `Error::Truncated` unless the peer's close record
+opened. Each direction closes on its own: after `close`, `seal` is `Error::Closed`, and receiving goes on.
 
-Two strangers run the handshake under `Trust::AnyWithKeyProof`, then:
+Any failure to open ends the session in both directions, split or not: `Error::Record` on every later
+`open`, `seal` and `close`, and the caller closes the connection. At `with_session_limit`, a longer record
+is `Error::LimitReached` in `seal` or `open`, the session stays intact, a close still passes, and a new
+handshake carries on: there is no rekeying.
+
+`export` gives unrelated bytes for another label or another length. Keep every application message
+inside the session: **a plain message on the same transport comes from whoever carries it**, even after
+a successful handshake.
+
+## Pairing (`coqui_peer_webcrypto::{PairingMethod, PairingSession, PairDial}`, `pair`)
 
 ```rust
-let channel = established.session.pair_channel(&identity, established.key.clone().unwrap())?;
-let joiner = Pairing::pin(pin, PinRole::Typed).join(channel)?;          // or PairingResponder::new(channel, &store, &desk, source)
-// each transmit() goes through session.seal, each received record through session.open, into receive()
+pub const PAIR_EXPORT_LABEL: &str = "EXPORTER-coqui-pair";
+pub struct PairingMethod;                     // Clone; Debug
+impl PairingMethod {
+    pub fn new(identity: Identity) -> PairingMethod;             // admits any proved key, in both roles
+    pub fn with_responders(self, trust: Trust) -> PairingMethod; // a joiner verifies the responder
+    pub fn with_max_message(self, bytes: usize) -> PairingMethod;
+    pub fn with_random(self, random: Random) -> PairingMethod;
+    pub fn weakened(&self) -> Vec<Weakening>;                    // always lists any-with-key-proof
+}
+impl coqui_peer::Method for PairingMethod { /* name() = "webcrypto"; initiate(); respond(source) */ }
+pub struct PairingHandshake;  // impl Handshake { Output = PairingSession, Framing::Message }
+pub struct PairingSession;    // no seal, no open: it runs one exchange
+impl PairingSession {
+    pub fn id(&self) -> &[u8; 32];
+    pub fn peer(&self) -> &KeyMaterial;
+    pub fn peer_id(&self) -> PeerId;
+    pub fn pair_channel(&self) -> Result<pair::Channel, Error>;  // the proved key; no caller names it
+    pub fn join<T: MessageTransport>(self, pairing: Pairing, transport: &mut T) -> Result<PairDial<'_, T>, Error>;
+    pub fn respond<T: MessageTransport + ReadTimeout>(self, store: &TrustStore, desk: &PairingDesk,
+        source: Option<SocketAddr>, transport: &mut T) -> Result<Paired, Error>;
+}
+impl<T: MessageTransport> PairDial<'_, T> {
+    pub fn shown(&self) -> Option<&Shown>;    // a PIN with its slot, or a device flow's user code
+    pub fn finish(self) -> Result<Paired, Error>;
+}
 ```
 
-The channel has `remote` the proved key, `verified` as `is_trusted`, and `binding` a 32-byte export:
-the pairing is tied to this session whatever TLS lies under it. On success the responder has
-`accept_key`ed the joiner and the joiner stores `Paired::peer`. Close, and reconnect under `Pinned` or
-`Store`: from then on the full key is what the handshake proves.
+**A stranger's session is this type, and only this type.** `WebCrypto` cannot admit an unknown key, and
+`PairingSession` cannot carry an application message, so what serves the application cannot be reached by
+proving just any key. `join` and `respond` seal every message, and end with a close record. `respond`
+blocks in `PairingDesk::wait` for the operator; each read waits until the exchange's deadline through
+`ReadTimeout`. On success the responder has `accept_key`ed the joiner and the joiner stores `Paired::peer`.
+Then both reconnect under `WebCrypto`, and the full key is what the handshake proves.
+
+- **Invitation**: `join` refuses (`Error::Pairing(PairingError::Unverified)`) unless the proved key is the
+  inviter's, before anything is sent. Pin the inviter in `with_responders` too, to stop others at the
+  handshake.
+- **PIN** (feature `pin`): no pin needed: the PIN authenticates both keys and the session's binding.
+- **Device flow**: `join` refuses unless `with_responders` verified the responder, or
+  `Pairing::allow_unverified(true)`, which lets a relay pair in place of both sides.
 
 ## Errors
 
 `Error` (non-exhaustive): `Malformed` (not valid here: encoding, member, key, or place in the
 exchange), `TooLong` (above `with_max_message`, or an export above 8160 bytes), `BadProof` (a signature
 does not verify), `Untrusted` (proved, and `Trust` does not admit it), `Unsupported` (no trust for that
-role), `State` (the handshake is over, or `finish` too early), `Random`, `Record` (see the session),
-`Key`, `Io(io::Error)`. `Display` is one lowercase clause and never quotes input, a key or a path. A
+role), `State` (the handshake is over, `finish` too early, a binding too late), `Random`, `Record`,
+`Truncated`, `Closed`, `LimitReached` (see the session), `Key`, `Pairing(PairingError)`, `Io(io::Error)`. `Display` is one lowercase clause and never quotes input, a key or a path. A
 handshake is over after an error: nothing queued leaves, and `transmit` is `State`.
 
 ## Gotchas
 
 - The handshake alone authenticates nothing that follows it. Use the session, or a relay that forwarded
   the handshake owns the connection.
-- Connection end is not authenticated: a cut looks like a close. A protocol above that needs to know
-  says so in a record.
+- A transport ending says nothing by itself: `verify_end` does. A peer that never calls `close` looks cut.
+- Signatures are transferable evidence that a key took part in a run, and a `hello` names its sender's key
+  to whoever receives it; see `PROTOCOL.md`.
+- Each `hello` costs a responder a signature for free: bound connections and time in the host.
 - Removing a peer does not stop its running sessions: the host closes them, polling
   `TrustStore::is_accepted` if it must.
 - `Error` and `Trust` are `#[non_exhaustive]`: a `match` needs a `_` arm.
