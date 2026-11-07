@@ -16,7 +16,7 @@ is unreleased, with no independent security review: depend on a git revision, an
 `Handshake`, `pair`); its API header ships in that crate. `PROTOCOL.md` ships here and is the wire.
 
 Imports: everything is at the crate root, including re-exports of `coqui-peer`'s `Established`,
-`KeyMaterial`, `MessageTransport`, `Method`, `PeerId`, `Random`, `TrustStore`, `Weakening` and its module
+`KeyMaterial`, `MessageTransport`, `Method`, `PeerId`, `Random`, `TrustStore`, `NonDefault` (`Weakening` is its deprecated alias for one release) and its module
 `pair`.
 
 No `unsafe` code (`#![forbid(unsafe_code)]`), no process-wide state. Nothing reads a file or an
@@ -87,7 +87,7 @@ impl WebCrypto {
     pub fn with_session_limit(self, bytes: u64) -> WebCrypto;    // per direction; DEFAULT_SESSION_LIMIT; no floor
     pub fn with_random(self, random: Random) -> WebCrypto;       // secure, or for test vectors only
     pub fn identity(&self) -> &Identity;
-    pub fn weakened(&self) -> Vec<Weakening>;  // a replaced random; larger limits
+    pub fn non_defaults(&self) -> Vec<NonDefault>;  // a replaced random; larger limits; weakened(): deprecated alias for one release
 }
 impl coqui_peer::Method for WebCrypto { /* name() = "webcrypto"; initiate(); respond(source) */ }
 pub struct WebCryptoHandshake;
@@ -162,7 +162,7 @@ impl PairingMethod {
     pub fn with_responders(self, trust: Trust) -> PairingMethod; // a joiner verifies the responder
     pub fn with_max_message(self, bytes: usize) -> PairingMethod;
     pub fn with_random(self, random: Random) -> PairingMethod;
-    pub fn weakened(&self) -> Vec<Weakening>;                    // always lists any-with-key-proof
+    pub fn non_defaults(&self) -> Vec<NonDefault>;    // a replaced random; larger limits (admitting any proved key is what pairing is, not listed)
 }
 impl coqui_peer::Method for PairingMethod { /* name() = "webcrypto"; initiate(); respond(source) */ }
 pub struct PairingHandshake;  // impl Handshake { Output = PairingSession, Framing::Message }

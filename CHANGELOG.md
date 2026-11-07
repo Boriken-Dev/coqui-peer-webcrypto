@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking: a weakened setting is a non-default setting.** `WebCrypto::weakened` and `PairingMethod::weakened` are
+  `non_defaults`, returning coqui-peer's `NonDefault { setting, value, default }`; the old methods and the
+  `Weakening` re-export stay one release as deprecated aliases.
+
+### Removed
+
+- **Breaking:** the always-on `initiators` and `responders` = `any-with-key-proof` entries of a pairing method:
+  admitting any proved key is what a pairing method is, not a setting left off its default.
+
 ### Added
 
 - `WebCrypto` and `WebCryptoHandshake`: the `coqui_peer::Method` named `webcrypto`, as initiator and
