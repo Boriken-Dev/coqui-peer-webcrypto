@@ -3,6 +3,7 @@ pub use coqui_peer_webcrypto::Established
 pub use coqui_peer_webcrypto::KeyMaterial
 pub use coqui_peer_webcrypto::MessageTransport
 pub use coqui_peer_webcrypto::Method
+pub use coqui_peer_webcrypto::NonDefault
 pub use coqui_peer_webcrypto::PeerId
 pub use coqui_peer_webcrypto::Random
 pub use coqui_peer_webcrypto::TrustStore
@@ -89,7 +90,8 @@ pub fn coqui_peer_webcrypto::PairingHandshake::fmt(&self, &mut core::fmt::Format
 pub struct coqui_peer_webcrypto::PairingMethod(_)
 impl coqui_peer_webcrypto::PairingMethod
 pub fn coqui_peer_webcrypto::PairingMethod::new(coqui_peer_webcrypto::Identity) -> Self
-pub fn coqui_peer_webcrypto::PairingMethod::weakened(&self) -> alloc::vec::Vec<coqui_peer::weakening::Weakening>
+pub fn coqui_peer_webcrypto::PairingMethod::non_defaults(&self) -> alloc::vec::Vec<coqui_peer::non_default::NonDefault>
+pub fn coqui_peer_webcrypto::PairingMethod::weakened(&self) -> alloc::vec::Vec<coqui_peer::non_default::NonDefault>
 pub fn coqui_peer_webcrypto::PairingMethod::with_max_message(self, usize) -> Self
 pub fn coqui_peer_webcrypto::PairingMethod::with_random(self, coqui_peer::random::Random) -> Self
 pub fn coqui_peer_webcrypto::PairingMethod::with_responders(self, coqui_peer_webcrypto::Trust) -> Self
@@ -131,7 +133,8 @@ pub struct coqui_peer_webcrypto::WebCrypto(_)
 impl coqui_peer_webcrypto::WebCrypto
 pub fn coqui_peer_webcrypto::WebCrypto::identity(&self) -> &coqui_peer_webcrypto::Identity
 pub fn coqui_peer_webcrypto::WebCrypto::new(coqui_peer_webcrypto::Identity) -> Self
-pub fn coqui_peer_webcrypto::WebCrypto::weakened(&self) -> alloc::vec::Vec<coqui_peer::weakening::Weakening>
+pub fn coqui_peer_webcrypto::WebCrypto::non_defaults(&self) -> alloc::vec::Vec<coqui_peer::non_default::NonDefault>
+pub fn coqui_peer_webcrypto::WebCrypto::weakened(&self) -> alloc::vec::Vec<coqui_peer::non_default::NonDefault>
 pub fn coqui_peer_webcrypto::WebCrypto::with_initiators(self, coqui_peer_webcrypto::Trust) -> Self
 pub fn coqui_peer_webcrypto::WebCrypto::with_max_message(self, usize) -> Self
 pub fn coqui_peer_webcrypto::WebCrypto::with_random(self, coqui_peer::random::Random) -> Self

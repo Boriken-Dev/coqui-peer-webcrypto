@@ -345,12 +345,12 @@ fn the_message_limit_is_a_setting_with_a_default_and_no_floor() {
     let tiny = WebCrypto::new(server.clone())
         .with_initiators(Trust::pinned([client.peer_id()]))
         .with_max_message(16);
-    assert!(tiny.weakened().is_empty());
+    assert!(tiny.non_defaults().is_empty());
     assert!(matches!(run(&dialing, &tiny), Err(Error::TooLong)));
     let large = WebCrypto::new(server)
         .with_initiators(Trust::pinned([client.peer_id()]))
         .with_max_message(1 << 20);
-    assert_eq!(large.weakened()[0].setting, "max_message");
+    assert_eq!(large.non_defaults()[0].setting, "max_message");
     assert!(run(&dialing, &large).is_ok());
 }
 
@@ -396,9 +396,9 @@ fn drive_failure(dialing: &WebCrypto) -> DriveError<Error> {
 }
 
 #[test]
-fn a_replaced_random_source_is_listed_as_weakened() {
+fn a_replaced_random_source_is_listed_as_a_non_default() {
     let (_, _, dialing, _) = pinned_pair();
-    assert!(dialing.weakened().is_empty());
+    assert!(dialing.non_defaults().is_empty());
     let replaced = dialing.with_random(coqui_peer_webcrypto::random());
-    assert_eq!(replaced.weakened()[0].setting, "random");
+    assert_eq!(replaced.non_defaults()[0].setting, "random");
 }

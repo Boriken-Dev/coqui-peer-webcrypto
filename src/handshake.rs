@@ -3,7 +3,7 @@ use alloc::sync::Arc;
 use core::fmt;
 use core::net::SocketAddr;
 
-use coqui_peer::{Established, Framing, Handshake, KeyMaterial, Method, Random, Weakening};
+use coqui_peer::{Established, Framing, Handshake, KeyMaterial, Method, NonDefault, Random};
 use p256::SecretKey;
 use zeroize::Zeroizing;
 
@@ -51,38 +51,26 @@ impl Config {
         }
     }
 
-    pub(crate) fn weakened(&self) -> Vec<Weakening> {
-        let mut weakened = Vec::new();
-        for (setting, admit) in [
-            ("responders", &self.responders),
-            ("initiators", &self.initiators),
-        ] {
-            if matches!(admit, Some(Admit::Any)) {
-                weakened.push(Weakening::new(
-                    setting,
-                    "any-with-key-proof",
-                    "pinned or store",
-                ));
-            }
-        }
+    pub(crate) fn non_defaults(&self) -> Vec<NonDefault> {
+        let mut non_defaults = Vec::new();
         if self.max_message > DEFAULT_MAX_MESSAGE {
-            weakened.push(Weakening::new(
+            non_defaults.push(NonDefault::new(
                 "max_message",
                 self.max_message.to_string(),
                 DEFAULT_MAX_MESSAGE.to_string(),
             ));
         }
         if self.session_limit > DEFAULT_SESSION_LIMIT {
-            weakened.push(Weakening::new(
+            non_defaults.push(NonDefault::new(
                 "session_limit",
                 self.session_limit.to_string(),
                 DEFAULT_SESSION_LIMIT.to_string(),
             ));
         }
         if self.random_replaced {
-            weakened.push(Weakening::new("random", "caller's", "operating system's"));
+            non_defaults.push(NonDefault::new("random", "caller's", "operating system's"));
         }
-        weakened
+        non_defaults
     }
 }
 
@@ -162,7 +150,7 @@ impl WebCrypto {
 
     /// Where nonces and ephemeral keys come from; the operating system by default. It must be
     /// cryptographically secure: a repeated ephemeral key or nonce breaks the session it is used
-    /// for. A fixed source is for test vectors. It is reported by [`weakened`](WebCrypto::weakened).
+    /// for. A fixed source is for test vectors. It is reported by [`non_defaults`](WebCrypto::non_defaults).
     #[must_use]
     pub fn with_random(mut self, random: Random) -> Self {
         let config = Arc::make_mut(&mut self.0);
@@ -177,10 +165,17 @@ impl WebCrypto {
         &self.0.identity
     }
 
-    /// The settings looser than their strict default.
+    /// The settings looser than their default.
     #[must_use]
-    pub fn weakened(&self) -> Vec<Weakening> {
-        self.0.weakened()
+    pub fn non_defaults(&self) -> Vec<NonDefault> {
+        self.0.non_defaults()
+    }
+
+    /// The old name of [`non_defaults`](Self::non_defaults).
+    #[deprecated(since = "0.0.0", note = "renamed to `non_defaults`")]
+    #[must_use]
+    pub fn weakened(&self) -> Vec<NonDefault> {
+        self.non_defaults()
     }
 }
 

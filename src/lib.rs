@@ -21,9 +21,11 @@ mod session;
 mod transcript;
 mod trust;
 
+#[allow(deprecated)]
+pub use coqui_peer::Weakening;
 pub use coqui_peer::pair;
 pub use coqui_peer::{
-    Established, KeyMaterial, MessageTransport, Method, PeerId, Random, TrustStore, Weakening,
+    Established, KeyMaterial, MessageTransport, Method, NonDefault, PeerId, Random, TrustStore,
 };
 pub use error::Error;
 pub use framed::FramedStream;

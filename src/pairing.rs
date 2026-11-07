@@ -7,8 +7,8 @@ use coqui_peer::pair::{
     Channel, Paired, Pairing, PairingDesk, PairingJoiner, PairingResponder, Shown,
 };
 use coqui_peer::{
-    Established, Framing, Handshake, KeyMaterial, MessageTransport, Method, PeerId, Random,
-    ReadTimeout, TrustStore, Weakening,
+    Established, Framing, Handshake, KeyMaterial, MessageTransport, Method, NonDefault, PeerId,
+    Random, ReadTimeout, TrustStore,
 };
 
 use crate::error::Error;
@@ -64,11 +64,18 @@ impl PairingMethod {
         self
     }
 
-    /// The settings looser than their strict default. A responder here always admits any proved
-    /// key, so that is always listed.
+    /// The settings looser than their default. A pairing method admits any proved key by
+    /// definition, so that is not listed.
     #[must_use]
-    pub fn weakened(&self) -> Vec<Weakening> {
-        self.0.weakened()
+    pub fn non_defaults(&self) -> Vec<NonDefault> {
+        self.0.non_defaults()
+    }
+
+    /// The old name of [`non_defaults`](Self::non_defaults).
+    #[deprecated(since = "0.0.0", note = "renamed to `non_defaults`")]
+    #[must_use]
+    pub fn weakened(&self) -> Vec<NonDefault> {
+        self.non_defaults()
     }
 }
 

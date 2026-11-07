@@ -118,7 +118,8 @@ fn a_pairing_session_holds_a_key_and_is_nobody() {
     assert_eq!(near.id(), far.id());
     assert!(!near.pair_channel().unwrap().verified);
     let method = PairingMethod::new(joiner);
-    assert!(method.weakened().iter().any(|w| w.setting == "initiators"));
+    // Admitting any proved key is what a pairing method is, so it is not a non-default setting.
+    assert!(method.non_defaults().is_empty());
     // `PairingSession` has no `seal` or `open`, and `Trust` has no way to admit a stranger: the
     // doctests on both are `compile_fail`.
 }
@@ -409,4 +410,13 @@ fn the_methods_refuse_each_others_gaps() {
         listening.respond(None).unwrap(),
     );
     assert!(matches!(exchange(&mut a, &mut b), Err(Error::Untrusted)));
+}
+
+#[test]
+#[allow(deprecated)]
+fn the_old_name_answers_the_new_one() {
+    let method = PairingMethod::new(Identity::generate().unwrap())
+        .with_random(coqui_peer_webcrypto::random());
+    assert_eq!(method.weakened(), method.non_defaults());
+    assert_eq!(method.non_defaults()[0].setting, "random");
 }

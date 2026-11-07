@@ -154,14 +154,14 @@ fn a_limit_of_zero_is_allowed_and_only_a_close_passes() {
 }
 
 #[test]
-fn a_limit_above_the_default_is_listed_as_weakened() {
+fn a_limit_above_the_default_is_listed_as_a_non_default() {
     let (client, _) = (Identity::generate().unwrap(), ());
     let method = WebCrypto::new(client.clone()).with_session_limit(DEFAULT_SESSION_LIMIT + 1);
-    assert_eq!(method.weakened()[0].setting, "session_limit");
+    assert_eq!(method.non_defaults()[0].setting, "session_limit");
     assert!(
         WebCrypto::new(client)
             .with_session_limit(1)
-            .weakened()
+            .non_defaults()
             .is_empty()
     );
 }
