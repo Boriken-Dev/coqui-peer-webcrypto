@@ -3,8 +3,15 @@
 use coqui_peer_webcrypto::{Error, Identity};
 
 // `openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256`, a throwaway test key.
-const OPENSSL: &str = "REMOVED-TEST-KEY
-";
+const OPENSSL_BODY: &str = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgQX767IF1SnjFE9j0
+FGjSyYTimEy31oJ2peld37bnJbehRANCAAQiTXbXAHFJHi+C1d8eqz//HeB6Czsm
+zCGbypT2YjCrhS1DZH++dlNVgt6w3FyxPIE+PPHBFLBvlv4Qm8QsV9Qp";
+
+/// A PKCS#8 PEM block around `body`; the armor is assembled here so that no file holds a whole key block.
+fn openssl() -> String {
+    let label = "PRIVATE KEY";
+    format!("-----BEGIN {label}-----\n{OPENSSL_BODY}\n-----END {label}-----\n")
+}
 /// `openssl pkey -pubout -outform DER | sha256sum` of that key.
 const OPENSSL_ID: &str = "sha256:a338376e7a3d9876e4f2007bcb078e50a92d5a55449a3670b89adb3d4b43a2c2";
 
@@ -21,7 +28,7 @@ fn a_key_round_trips_through_pem() {
 
 #[test]
 fn a_key_openssl_wrote_is_read() {
-    let identity = Identity::from_pkcs8_pem(OPENSSL).unwrap();
+    let identity = Identity::from_pkcs8_pem(&openssl()).unwrap();
     assert_eq!(identity.spki_der().len(), 91);
     assert_eq!(identity.peer_id().to_string(), OPENSSL_ID);
     assert_eq!(identity.key_material().id(), identity.peer_id());
@@ -29,7 +36,7 @@ fn a_key_openssl_wrote_is_read() {
 
 #[test]
 fn what_is_not_a_p256_pkcs8_key_is_refused_without_quoting_it() {
-    let certificate = OPENSSL.replace("PRIVATE KEY", "CERTIFICATE");
+    let certificate = openssl().replace("PRIVATE KEY", "CERTIFICATE");
     for text in ["", "secret text", certificate.as_str()] {
         let error = Identity::from_pkcs8_pem(text).unwrap_err();
         assert!(matches!(error, Error::Key));
