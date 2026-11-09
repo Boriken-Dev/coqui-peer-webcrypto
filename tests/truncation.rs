@@ -105,12 +105,14 @@ fn a_failed_open_ends_sending_too() {
 
 fn limited(limit: u64) -> (Session, Session) {
     let (client, server) = (Identity::generate().unwrap(), Identity::generate().unwrap());
-    let dialing = WebCrypto::new(client.clone())
-        .with_responders(Trust::pinned([server.peer_id()]))
-        .with_session_limit(limit);
-    let listening = WebCrypto::new(server)
-        .with_initiators(Trust::pinned([client.peer_id()]))
-        .with_session_limit(limit);
+    let dialing = WebCrypto::builder(client.clone())
+        .responders(Trust::pinned([server.peer_id()]))
+        .session_limit(limit)
+        .build();
+    let listening = WebCrypto::builder(server)
+        .initiators(Trust::pinned([client.peer_id()]))
+        .session_limit(limit)
+        .build();
     let (near, far) = run(&dialing, &listening).unwrap();
     (near.session, far.session)
 }
@@ -133,10 +135,13 @@ fn the_session_limit_stops_a_direction_and_a_close_still_passes() {
 fn a_peer_past_the_limit_is_refused_at_the_opener() {
     let (mut wide, _) = limited(1 << 20);
     let (client, server) = (Identity::generate().unwrap(), Identity::generate().unwrap());
-    let dialing = WebCrypto::new(client.clone()).with_responders(Trust::pinned([server.peer_id()]));
-    let listening = WebCrypto::new(server)
-        .with_initiators(Trust::pinned([client.peer_id()]))
-        .with_session_limit(0);
+    let dialing = WebCrypto::builder(client.clone())
+        .responders(Trust::pinned([server.peer_id()]))
+        .build();
+    let listening = WebCrypto::builder(server)
+        .initiators(Trust::pinned([client.peer_id()]))
+        .session_limit(0)
+        .build();
     let (near, far) = run(&dialing, &listening).unwrap();
     let (mut near, mut far) = (near.session, far.session);
     assert!(matches!(
@@ -154,14 +159,18 @@ fn a_limit_of_zero_is_allowed_and_only_a_close_passes() {
 }
 
 #[test]
-fn a_limit_above_the_default_is_listed_as_a_non_default() {
+fn a_limit_that_differs_from_the_default_is_listed_as_a_non_default() {
     let (client, _) = (Identity::generate().unwrap(), ());
-    let method = WebCrypto::new(client.clone()).with_session_limit(DEFAULT_SESSION_LIMIT + 1);
+    let method = WebCrypto::builder(client.clone())
+        .session_limit(DEFAULT_SESSION_LIMIT + 1)
+        .build();
     assert_eq!(method.non_defaults()[0].setting, "session_limit");
-    assert!(
-        WebCrypto::new(client)
-            .with_session_limit(1)
-            .non_defaults()
-            .is_empty()
+    assert_eq!(
+        WebCrypto::builder(client)
+            .session_limit(1)
+            .build()
+            .non_defaults()[0]
+            .setting,
+        "session_limit"
     );
 }

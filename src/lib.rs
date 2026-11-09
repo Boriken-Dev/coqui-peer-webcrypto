@@ -18,20 +18,23 @@ mod identity;
 mod message;
 mod pairing;
 mod session;
+mod settings;
 mod transcript;
 mod trust;
 
-#[allow(deprecated)]
-pub use coqui_peer::Weakening;
 pub use coqui_peer::pair;
 pub use coqui_peer::{
     Established, KeyMaterial, MessageTransport, Method, NonDefault, PeerId, Random, TrustStore,
 };
 pub use error::Error;
 pub use framed::FramedStream;
-pub use handshake::{METHOD, WebCrypto, WebCryptoHandshake, random};
+pub use handshake::{METHOD, WebCrypto, WebCryptoBuilder, WebCryptoHandshake, random};
 pub use identity::Identity;
 pub use message::{DEFAULT_MAX_MESSAGE, PROFILE};
-pub use pairing::{PAIR_EXPORT_LABEL, PairDial, PairingHandshake, PairingMethod, PairingSession};
+pub use pairing::{
+    PAIR_EXPORT_LABEL, PairDial, PairingHandshake, PairingMethod, PairingMethodBuilder,
+    PairingSession,
+};
 pub use session::{DEFAULT_SESSION_LIMIT, Opener, Sealer, Session};
+pub use settings::{PairingSettings, WebCryptoSettings};
 pub use trust::Trust;

@@ -15,6 +15,7 @@ use crate::error::Error;
 use crate::handshake::{Config, Exchange, Finished, METHOD};
 use crate::identity::Identity;
 use crate::session::Session;
+use crate::settings::PairingSettings;
 use crate::trust::{Admit, Trust};
 
 /// The export label [`PairingSession::pair_channel`] binds a pairing to.
@@ -25,57 +26,74 @@ pub const PAIR_EXPORT_LABEL: &str = "EXPORTER-coqui-pair";
 /// exchange and nothing else. No application message can pass over it.
 ///
 /// A joiner that knows who it is reaching says so with
-/// [`with_responders`](PairingMethod::with_responders); an invitation and the device flow need it.
+/// [`responders`](PairingMethodBuilder::responders); an invitation and the device flow need it.
 #[derive(Clone)]
 pub struct PairingMethod(Arc<Config>);
 
+/// Builds a [`PairingMethod`]: [`PairingMethod::builder`], the settings, then
+/// [`build`](Self::build).
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct PairingMethodBuilder(Config);
+
+impl PairingMethodBuilder {
+    /// Whom a joiner accepts: a pin or a store. The session is then verified, which the device flow
+    /// asks for; the key an invitation names must be the proved one in any case.
+    pub fn responders(mut self, trust: Trust) -> Self {
+        self.0.responders = Some(Admit::Trust(trust));
+        self
+    }
+
+    /// The longest handshake message accepted; see [`PairingSettings::max_message`].
+    pub fn max_message(mut self, bytes: usize) -> Self {
+        self.0.settings.max_message = bytes;
+        self
+    }
+
+    /// As [`WebCryptoBuilder::random`](crate::WebCryptoBuilder::random).
+    pub fn random(mut self, random: Random) -> Self {
+        self.0.random = random;
+        self.0.random_replaced = true;
+        self
+    }
+
+    /// The message limit from `settings`. Replaces what [`max_message`](Self::max_message) set
+    /// before, and is replaced by it after.
+    pub fn settings(mut self, settings: PairingSettings) -> Self {
+        self.0.settings.max_message = settings.max_message;
+        self
+    }
+
+    /// The method.
+    pub fn build(self) -> PairingMethod {
+        PairingMethod(Arc::new(self.0))
+    }
+}
+
 impl PairingMethod {
-    /// A method for `identity`, as a responder admitting any proved key, and as a joiner accepting
-    /// any proved key until [`with_responders`](PairingMethod::with_responders).
-    #[must_use]
-    pub fn new(identity: Identity) -> Self {
+    /// A builder for a method for `identity`, as a responder admitting any proved key, and as a
+    /// joiner accepting any proved key until [`responders`](PairingMethodBuilder::responders).
+    pub fn builder(identity: Identity) -> PairingMethodBuilder {
         let mut config = Config::new(identity);
         config.responders = Some(Admit::Any);
         config.initiators = Some(Admit::Any);
-        Self(Arc::new(config))
+        PairingMethodBuilder(config)
     }
 
-    /// Whom a joiner accepts: a pin or a store. The session is then verified, which the device flow
-    /// asks for; the key an invitation names must be the proved one in any case.
+    /// The limit it was built with.
     #[must_use]
-    pub fn with_responders(mut self, trust: Trust) -> Self {
-        Arc::make_mut(&mut self.0).responders = Some(Admit::Trust(trust));
-        self
+    pub fn settings(&self) -> PairingSettings {
+        PairingSettings {
+            max_message: self.0.settings.max_message,
+        }
     }
 
-    /// As [`WebCrypto::with_max_message`](crate::WebCrypto::with_max_message).
-    #[must_use]
-    pub fn with_max_message(mut self, bytes: usize) -> Self {
-        Arc::make_mut(&mut self.0).max_message = bytes;
-        self
-    }
-
-    /// As [`WebCrypto::with_random`](crate::WebCrypto::with_random).
-    #[must_use]
-    pub fn with_random(mut self, random: Random) -> Self {
-        let config = Arc::make_mut(&mut self.0);
-        config.random = random;
-        config.random_replaced = true;
-        self
-    }
-
-    /// The settings looser than their default. A pairing method admits any proved key by
-    /// definition, so that is not listed.
+    /// Every setting that differs from its default, named by key path, and `random` when the
+    /// nonces and ephemeral keys do not come from the operating system. A pairing method admits
+    /// any proved key by definition, so that is not listed.
     #[must_use]
     pub fn non_defaults(&self) -> Vec<NonDefault> {
         self.0.non_defaults()
-    }
-
-    /// The old name of [`non_defaults`](Self::non_defaults).
-    #[deprecated(since = "0.0.0", note = "renamed to `non_defaults`")]
-    #[must_use]
-    pub fn weakened(&self) -> Vec<NonDefault> {
-        self.non_defaults()
     }
 }
 
@@ -218,7 +236,7 @@ impl PairingSession {
 
     /// The [`Channel`] an exchange runs on: `local` this side's key, `remote` the key this handshake
     /// proved, which no caller can name instead, `verified` when a joiner's
-    /// [`with_responders`](PairingMethod::with_responders) admitted the peer, and `binding` a 32-byte
+    /// [`responders`](PairingMethodBuilder::responders) admitted the peer, and `binding` a 32-byte
     /// export under [`PAIR_EXPORT_LABEL`], tying the exchange to this session and not to any TLS
     /// connection beneath it.
     ///

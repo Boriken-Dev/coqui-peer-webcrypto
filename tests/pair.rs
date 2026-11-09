@@ -76,8 +76,8 @@ fn pairing_run(
 
 fn strangers(joiner: &Identity, responder: &Identity) -> (PairingSession, PairingSession) {
     let (near, far) = pairing_run(
-        &PairingMethod::new(joiner.clone()),
-        &PairingMethod::new(responder.clone()),
+        &PairingMethod::builder(joiner.clone()).build(),
+        &PairingMethod::builder(responder.clone()).build(),
     )
     .unwrap();
     (near.session, far.session)
@@ -117,7 +117,7 @@ fn a_pairing_session_holds_a_key_and_is_nobody() {
     assert_eq!(far.peer_id(), joiner.peer_id());
     assert_eq!(near.id(), far.id());
     assert!(!near.pair_channel().unwrap().verified);
-    let method = PairingMethod::new(joiner);
+    let method = PairingMethod::builder(joiner).build();
     // Admitting any proved key is what a pairing method is, so it is not a non-default setting.
     assert!(method.non_defaults().is_empty());
     // `PairingSession` has no `seal` or `open`, and `Trust` has no way to admit a stranger: the
@@ -146,8 +146,12 @@ fn a_typed_pin_pairs_two_strangers_and_the_full_key_is_proved_afterwards() {
     assert!(world.store.is_accepted(&joiner.peer_id()));
 
     // The next connection is the ordinary method, with no PIN and each key pinned.
-    let dialing = WebCrypto::new(joiner.clone()).with_responders(Trust::pinned([paired.peer.id()]));
-    let listening = WebCrypto::new(responder).with_initiators(Trust::Store(world.store.clone()));
+    let dialing = WebCrypto::builder(joiner.clone())
+        .responders(Trust::pinned([paired.peer.id()]))
+        .build();
+    let listening = WebCrypto::builder(responder)
+        .initiators(Trust::Store(world.store.clone()))
+        .build();
     let (_, at_responder) = run(&dialing, &listening).unwrap();
     assert_eq!(at_responder.peer, joiner.peer_id());
 }
@@ -205,15 +209,17 @@ fn an_invitation_goes_only_to_the_key_the_handshake_proved_to_be_the_inviters() 
     drop(at_relay);
 
     // A pin on the inviter stops such a relay at the handshake, before pairing is reached.
-    let pinned =
-        PairingMethod::new(joiner.clone()).with_responders(Trust::pinned([inviter.peer_id()]));
+    let pinned = PairingMethod::builder(joiner.clone())
+        .responders(Trust::pinned([inviter.peer_id()]))
+        .build();
     assert!(matches!(
-        pairing_run(&pinned, &PairingMethod::new(relay)),
+        pairing_run(&pinned, &PairingMethod::builder(relay).build()),
         Err(Error::Untrusted)
     ));
 
     // With the real inviter it pairs.
-    let (near, far) = pairing_run(&pinned, &PairingMethod::new(inviter.clone())).unwrap();
+    let (near, far) =
+        pairing_run(&pinned, &PairingMethod::builder(inviter.clone()).build()).unwrap();
     assert!(near.session.pair_channel().unwrap().verified);
     let (mut a, mut b) = pipes();
     let serving = {
@@ -247,9 +253,11 @@ fn the_device_flow_needs_a_verified_responder_and_runs_through_the_driver() {
         Err(Error::Pairing(PairingError::Unverified))
     ));
 
-    let pinned =
-        PairingMethod::new(joiner.clone()).with_responders(Trust::pinned([responder.peer_id()]));
-    let (near, far) = pairing_run(&pinned, &PairingMethod::new(responder.clone())).unwrap();
+    let pinned = PairingMethod::builder(joiner.clone())
+        .responders(Trust::pinned([responder.peer_id()]))
+        .build();
+    let (near, far) =
+        pairing_run(&pinned, &PairingMethod::builder(responder.clone()).build()).unwrap();
     let (mut a, mut b) = pipes();
     let serving = {
         let (store, desk) = (world.store.clone(), world.desk.clone());
@@ -402,21 +410,15 @@ fn the_methods_refuse_each_others_gaps() {
     let identity = Identity::generate().unwrap();
     let other = Identity::generate().unwrap();
     // `WebCrypto` with an empty pin set admits no stranger, whatever `PairingMethod` would do.
-    let dialing =
-        WebCrypto::new(other.clone()).with_responders(Trust::pinned([identity.peer_id()]));
-    let listening = WebCrypto::new(identity).with_initiators(Trust::pinned([]));
+    let dialing = WebCrypto::builder(other.clone())
+        .responders(Trust::pinned([identity.peer_id()]))
+        .build();
+    let listening = WebCrypto::builder(identity)
+        .initiators(Trust::pinned([]))
+        .build();
     let (mut a, mut b) = (
         dialing.initiate().unwrap(),
         listening.respond(None).unwrap(),
     );
     assert!(matches!(exchange(&mut a, &mut b), Err(Error::Untrusted)));
-}
-
-#[test]
-#[allow(deprecated)]
-fn the_old_name_answers_the_new_one() {
-    let method = PairingMethod::new(Identity::generate().unwrap())
-        .with_random(coqui_peer_webcrypto::random());
-    assert_eq!(method.weakened(), method.non_defaults());
-    assert_eq!(method.non_defaults()[0].setting, "random");
 }

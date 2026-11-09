@@ -6,7 +6,7 @@ mod support;
 
 use core::time::Duration;
 
-use coqui_peer::Method;
+use coqui_peer::{Method, TrustStoreBuilder};
 use coqui_peer_webcrypto::{Identity, Trust, TrustStore, WebCrypto};
 use support::exchange;
 
@@ -17,11 +17,13 @@ struct Server {
     _dir: tempfile::TempDir,
 }
 
-fn server(configure: impl FnOnce(TrustStore) -> TrustStore) -> Server {
+fn server(configure: impl FnOnce(TrustStoreBuilder) -> TrustStoreBuilder) -> Server {
     let dir = tempfile::tempdir().unwrap();
-    let store = configure(TrustStore::open(dir.path()).unwrap());
+    let store = configure(TrustStore::builder(dir.path())).build().unwrap();
     let identity = Identity::generate().unwrap();
-    let method = WebCrypto::new(identity.clone()).with_initiators(Trust::Store(store.clone()));
+    let method = WebCrypto::builder(identity.clone())
+        .initiators(Trust::Store(store.clone()))
+        .build();
     Server {
         identity,
         method,
@@ -32,8 +34,9 @@ fn server(configure: impl FnOnce(TrustStore) -> TrustStore) -> Server {
 
 impl Server {
     fn knock(&self, peer: &Identity, source: &str) {
-        let dialing =
-            WebCrypto::new(peer.clone()).with_responders(Trust::pinned([self.identity.peer_id()]));
+        let dialing = WebCrypto::builder(peer.clone())
+            .responders(Trust::pinned([self.identity.peer_id()]))
+            .build();
         let (mut near, mut far) = (
             dialing.initiate().unwrap(),
             self.method.respond(Some(source.parse().unwrap())).unwrap(),
@@ -50,7 +53,7 @@ const PROXY: &str = "192.0.2.1:443";
 
 #[test]
 fn a_flood_of_strangers_from_one_source_does_not_evict_who_is_waiting() {
-    let server = server(|store| store.with_record_interval(Duration::ZERO));
+    let server = server(|store| store.record_interval(Duration::ZERO));
     let legitimate = Identity::generate().unwrap();
     server.knock(&legitimate, PROXY);
     for _ in 0..40 {

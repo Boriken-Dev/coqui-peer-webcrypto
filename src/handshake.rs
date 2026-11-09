@@ -10,10 +10,10 @@ use zeroize::Zeroizing;
 use crate::error::Error;
 use crate::identity::{Identity, draw_scalar, key_material};
 use crate::message::{
-    Challenge, DEFAULT_MAX_MESSAGE, Hello, NONCE_LEN, Point, Spki, decode_signature,
-    encode_signature,
+    Challenge, Hello, NONCE_LEN, Point, Spki, decode_signature, encode_signature,
 };
-use crate::session::{DEFAULT_SESSION_LIMIT, Session};
+use crate::session::Session;
+use crate::settings::WebCryptoSettings;
 use crate::transcript::{Keys, ROLE_ACCEPT, ROLE_CLIENT, ROLE_SERVER, Transcript};
 use crate::trust::{Admit, Trust};
 
@@ -32,8 +32,7 @@ pub(crate) struct Config {
     pub(crate) identity: Identity,
     pub(crate) responders: Option<Admit>,
     pub(crate) initiators: Option<Admit>,
-    pub(crate) max_message: usize,
-    pub(crate) session_limit: u64,
+    pub(crate) settings: WebCryptoSettings,
     pub(crate) random: Random,
     pub(crate) random_replaced: bool,
 }
@@ -44,29 +43,14 @@ impl Config {
             identity,
             responders: None,
             initiators: None,
-            max_message: DEFAULT_MAX_MESSAGE,
-            session_limit: DEFAULT_SESSION_LIMIT,
+            settings: WebCryptoSettings::default(),
             random: crate::random(),
             random_replaced: false,
         }
     }
 
     pub(crate) fn non_defaults(&self) -> Vec<NonDefault> {
-        let mut non_defaults = Vec::new();
-        if self.max_message > DEFAULT_MAX_MESSAGE {
-            non_defaults.push(NonDefault::new(
-                "max_message",
-                self.max_message.to_string(),
-                DEFAULT_MAX_MESSAGE.to_string(),
-            ));
-        }
-        if self.session_limit > DEFAULT_SESSION_LIMIT {
-            non_defaults.push(NonDefault::new(
-                "session_limit",
-                self.session_limit.to_string(),
-                DEFAULT_SESSION_LIMIT.to_string(),
-            ));
-        }
+        let mut non_defaults = NonDefault::of_settings(&self.settings);
         if self.random_replaced {
             non_defaults.push(NonDefault::new("random", "caller's", "operating system's"));
         }
@@ -82,8 +66,12 @@ impl Config {
 ///
 /// # fn main() -> Result<(), coqui_peer_webcrypto::Error> {
 /// let (dialer, listener) = (Identity::generate()?, Identity::generate()?);
-/// let client = WebCrypto::new(dialer.clone()).with_responders(Trust::pinned([listener.peer_id()]));
-/// let server = WebCrypto::new(listener).with_initiators(Trust::pinned([dialer.peer_id()]));
+/// let client = WebCrypto::builder(dialer.clone())
+///     .responders(Trust::pinned([listener.peer_id()]))
+///     .build();
+/// let server = WebCrypto::builder(listener)
+///     .initiators(Trust::pinned([dialer.peer_id()]))
+///     .build();
 ///
 /// let (mut dialing, mut listening) = (client.initiate()?, server.respond(None)?);
 /// while !(dialing.is_complete() && listening.is_complete()) {
@@ -107,56 +95,65 @@ impl Config {
 #[derive(Clone)]
 pub struct WebCrypto(Arc<Config>);
 
-impl WebCrypto {
-    /// A method for `identity`, configured for neither role until
-    /// [`with_responders`](WebCrypto::with_responders) or
-    /// [`with_initiators`](WebCrypto::with_initiators).
-    #[must_use]
-    pub fn new(identity: Identity) -> Self {
-        Self(Arc::new(Config::new(identity)))
-    }
+/// Builds a [`WebCrypto`]: [`WebCrypto::builder`], the settings, then [`build`](Self::build).
+#[derive(Debug, Clone)]
+#[must_use]
+pub struct WebCryptoBuilder(Config);
 
+impl WebCryptoBuilder {
     /// Whom [`initiate`](Method::initiate) admits as the responder.
-    #[must_use]
-    pub fn with_responders(mut self, trust: Trust) -> Self {
-        Arc::make_mut(&mut self.0).responders = Some(Admit::Trust(trust));
+    pub fn responders(mut self, trust: Trust) -> Self {
+        self.0.responders = Some(Admit::Trust(trust));
         self
     }
 
     /// Whom [`respond`](Method::respond) admits as the initiator.
-    #[must_use]
-    pub fn with_initiators(mut self, trust: Trust) -> Self {
-        Arc::make_mut(&mut self.0).initiators = Some(Admit::Trust(trust));
+    pub fn initiators(mut self, trust: Trust) -> Self {
+        self.0.initiators = Some(Admit::Trust(trust));
         self
     }
 
-    /// The longest handshake message accepted, before it is parsed; [`DEFAULT_MAX_MESSAGE`] by
-    /// default. A value below what the messages need makes every handshake fail.
-    #[must_use]
-    pub fn with_max_message(mut self, bytes: usize) -> Self {
-        Arc::make_mut(&mut self.0).max_message = bytes;
+    /// The longest handshake message accepted; see [`WebCryptoSettings::max_message`].
+    pub fn max_message(mut self, bytes: usize) -> Self {
+        self.0.settings.max_message = bytes;
         self
     }
 
-    /// What each direction of a session may carry, each record counting its length and 32;
-    /// [`DEFAULT_SESSION_LIMIT`] by default. There is no rekeying: at the limit `seal` and `open`
-    /// give [`Error::LimitReached`], a close record still passes, and a new handshake carries on.
-    /// Above the default, AES-GCM's confidentiality margin shrinks.
-    #[must_use]
-    pub fn with_session_limit(mut self, bytes: u64) -> Self {
-        Arc::make_mut(&mut self.0).session_limit = bytes;
+    /// What each direction of a session may carry; see [`WebCryptoSettings::session_limit`].
+    pub fn session_limit(mut self, bytes: u64) -> Self {
+        self.0.settings.session_limit = bytes;
         self
     }
 
     /// Where nonces and ephemeral keys come from; the operating system by default. It must be
     /// cryptographically secure: a repeated ephemeral key or nonce breaks the session it is used
-    /// for. A fixed source is for test vectors. It is reported by [`non_defaults`](WebCrypto::non_defaults).
-    #[must_use]
-    pub fn with_random(mut self, random: Random) -> Self {
-        let config = Arc::make_mut(&mut self.0);
-        config.random = random;
-        config.random_replaced = true;
+    /// for. A fixed source is for test vectors. It is reported by [`WebCrypto::non_defaults`].
+    pub fn random(mut self, random: Random) -> Self {
+        self.0.random = random;
+        self.0.random_replaced = true;
         self
+    }
+
+    /// The message and session limits from `settings`. Replaces what
+    /// [`max_message`](Self::max_message) and [`session_limit`](Self::session_limit) set before,
+    /// and is replaced by what they set after it.
+    pub fn settings(mut self, settings: WebCryptoSettings) -> Self {
+        self.0.settings = settings;
+        self
+    }
+
+    /// The method.
+    pub fn build(self) -> WebCrypto {
+        WebCrypto(Arc::new(self.0))
+    }
+}
+
+impl WebCrypto {
+    /// A builder for a method for `identity`, configured for neither role until
+    /// [`responders`](WebCryptoBuilder::responders) or
+    /// [`initiators`](WebCryptoBuilder::initiators).
+    pub fn builder(identity: Identity) -> WebCryptoBuilder {
+        WebCryptoBuilder(Config::new(identity))
     }
 
     /// This method's identity.
@@ -165,17 +162,17 @@ impl WebCrypto {
         &self.0.identity
     }
 
-    /// The settings looser than their default.
+    /// The limits it was built with.
+    #[must_use]
+    pub fn settings(&self) -> WebCryptoSettings {
+        self.0.settings
+    }
+
+    /// Every setting that differs from its default, named by key path, and `random` when the
+    /// nonces and ephemeral keys do not come from the operating system.
     #[must_use]
     pub fn non_defaults(&self) -> Vec<NonDefault> {
         self.0.non_defaults()
-    }
-
-    /// The old name of [`non_defaults`](Self::non_defaults).
-    #[deprecated(since = "0.0.0", note = "renamed to `non_defaults`")]
-    #[must_use]
-    pub fn weakened(&self) -> Vec<NonDefault> {
-        self.non_defaults()
     }
 }
 
@@ -186,8 +183,7 @@ impl fmt::Debug for WebCrypto {
             .field("identity", &self.0.identity)
             .field("responders", &self.0.responders)
             .field("initiators", &self.0.initiators)
-            .field("max_message", &self.0.max_message)
-            .field("session_limit", &self.0.session_limit)
+            .field("settings", &self.0.settings)
             .finish_non_exhaustive()
     }
 }
@@ -203,7 +199,7 @@ impl Method for WebCrypto {
     ///
     /// # Errors
     ///
-    /// [`Error::Unsupported`] without [`with_responders`](WebCrypto::with_responders),
+    /// [`Error::Unsupported`] without [`responders`](WebCryptoBuilder::responders),
     /// [`Error::Random`] when the generator fails.
     fn initiate(&self) -> Result<WebCryptoHandshake, Error> {
         Exchange::initiate(&self.0).map(WebCryptoHandshake)
@@ -213,7 +209,7 @@ impl Method for WebCrypto {
     ///
     /// # Errors
     ///
-    /// [`Error::Unsupported`] without [`with_initiators`](WebCrypto::with_initiators).
+    /// [`Error::Unsupported`] without [`initiators`](WebCryptoBuilder::initiators).
     fn respond(&self, source: Option<SocketAddr>) -> Result<WebCryptoHandshake, Error> {
         Exchange::respond(&self.0, source).map(WebCryptoHandshake)
     }
@@ -334,7 +330,7 @@ impl Exchange {
     fn step(&mut self, input: &[u8]) -> Result<(), Error> {
         let config = self.config.clone();
         let identity = &config.identity;
-        let max = config.max_message;
+        let max = config.settings.max_message;
         match core::mem::replace(&mut self.state, State::Failed) {
             State::AwaitHello => {
                 let hello = Hello::decode(input, max)?;
@@ -389,7 +385,7 @@ impl Exchange {
                     keys,
                     initiator: false,
                     identified: admit.identifies(),
-                    limit: config.session_limit,
+                    limit: config.settings.session_limit,
                 });
                 self.state = State::Done;
             }
@@ -436,7 +432,7 @@ impl Exchange {
                     keys,
                     initiator: true,
                     identified: admit.identifies(),
-                    limit: config.session_limit,
+                    limit: config.settings.session_limit,
                 });
                 self.state = State::Done;
             }
@@ -489,7 +485,7 @@ impl WebCryptoHandshake {
     /// # Errors
     ///
     /// [`Error::State`] after the first [`receive`](Handshake::receive): the transcript is fixed.
-    pub fn with_binding(mut self, binding: &[u8]) -> Result<Self, Error> {
+    pub fn binding(mut self, binding: &[u8]) -> Result<Self, Error> {
         self.0.set_binding(binding)?;
         Ok(self)
     }

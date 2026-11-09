@@ -58,17 +58,19 @@ fn point(scalar: [u8; 32]) -> Vec<u8> {
 }
 
 fn initiator() -> WebCryptoHandshake {
-    WebCrypto::new(identity(INITIATOR_SCALAR))
-        .with_responders(Trust::pinned([identity(RESPONDER_SCALAR).peer_id()]))
-        .with_random(scripted(&[&INITIATOR_NONCE, &INITIATOR_EPHEMERAL]))
+    WebCrypto::builder(identity(INITIATOR_SCALAR))
+        .responders(Trust::pinned([identity(RESPONDER_SCALAR).peer_id()]))
+        .random(scripted(&[&INITIATOR_NONCE, &INITIATOR_EPHEMERAL]))
+        .build()
         .initiate()
         .unwrap()
 }
 
 fn responder() -> WebCryptoHandshake {
-    WebCrypto::new(identity(RESPONDER_SCALAR))
-        .with_initiators(Trust::pinned([identity(INITIATOR_SCALAR).peer_id()]))
-        .with_random(scripted(&[&RESPONDER_NONCE, &RESPONDER_EPHEMERAL]))
+    WebCrypto::builder(identity(RESPONDER_SCALAR))
+        .initiators(Trust::pinned([identity(INITIATOR_SCALAR).peer_id()]))
+        .random(scripted(&[&RESPONDER_NONCE, &RESPONDER_EPHEMERAL]))
+        .build()
         .respond(None)
         .unwrap()
 }

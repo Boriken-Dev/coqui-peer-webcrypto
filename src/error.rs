@@ -12,7 +12,7 @@ pub enum Error {
     /// A message is not one this protocol allows at this point: its encoding, a member, a key or
     /// its place in the exchange.
     Malformed,
-    /// A message is longer than [`with_max_message`](crate::WebCrypto::with_max_message) allows,
+    /// A message is longer than [`max_message`](crate::WebCryptoSettings::max_message) allows,
     /// or an export is longer than HKDF can give.
     TooLong,
     /// A signature does not verify: another transcript, another key or another outer binding.
@@ -37,7 +37,7 @@ pub enum Error {
     Truncated,
     /// This side already sent its close record, so it sends no more.
     Closed,
-    /// This direction used up [`with_session_limit`](crate::WebCrypto::with_session_limit). Only
+    /// This direction used up [`session_limit`](crate::WebCryptoSettings::session_limit). Only
     /// a close record can still be sent or opened; a new handshake carries on.
     LimitReached,
     /// The text or bytes are not a P-256 private key in PKCS#8.

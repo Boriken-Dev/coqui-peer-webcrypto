@@ -161,9 +161,12 @@ fn swapping_the_initiators_key_in_the_hello_fails_the_responders_proof() {
     let (_, server, dialing, _) = pinned_pair();
     let attacker = Identity::generate().unwrap();
     // The responder admits the attacker, so only the proof can stop this.
-    let listening =
-        WebCrypto::new(server.clone()).with_initiators(Trust::pinned([attacker.peer_id()]));
-    let attacker_side = WebCrypto::new(attacker).with_responders(Trust::pinned([server.peer_id()]));
+    let listening = WebCrypto::builder(server.clone())
+        .initiators(Trust::pinned([attacker.peer_id()]))
+        .build();
+    let attacker_side = WebCrypto::builder(attacker)
+        .responders(Trust::pinned([server.peer_id()]))
+        .build();
     let attacker_hello = attacker_side
         .initiate()
         .unwrap()
@@ -187,7 +190,9 @@ fn swapping_the_responders_key_for_a_relays_own_fails_the_pin() {
     let (client, server, dialing, _) = pinned_pair();
     let relay = Identity::generate().unwrap();
     // The relay runs a real handshake of its own toward the client.
-    let relaying = WebCrypto::new(relay).with_initiators(Trust::pinned([client.peer_id()]));
+    let relaying = WebCrypto::builder(relay)
+        .initiators(Trust::pinned([client.peer_id()]))
+        .build();
     let (mut a, mut b) = (dialing.initiate().unwrap(), relaying.respond(None).unwrap());
     assert!(matches!(exchange(&mut a, &mut b), Err(Error::Untrusted)));
     assert_ne!(relaying.identity().peer_id(), server.peer_id());
@@ -254,15 +259,11 @@ fn an_outer_binding_is_optional_and_refuses_two_different_channels() {
     let (_, _, dialing, listening) = pinned_pair();
     // Each end really ended one TLS connection, and read one exporter.
     let (mut a, mut b) = (
-        dialing
-            .initiate()
-            .unwrap()
-            .with_binding(b"exporter")
-            .unwrap(),
+        dialing.initiate().unwrap().binding(b"exporter").unwrap(),
         listening
             .respond(None)
             .unwrap()
-            .with_binding(b"exporter")
+            .binding(b"exporter")
             .unwrap(),
     );
     exchange(&mut a, &mut b).unwrap();
@@ -274,12 +275,12 @@ fn an_outer_binding_is_optional_and_refuses_two_different_channels() {
         dialing
             .initiate()
             .unwrap()
-            .with_binding(b"exporter of leg one")
+            .binding(b"exporter of leg one")
             .unwrap(),
         listening
             .respond(None)
             .unwrap()
-            .with_binding(b"exporter of leg two")
+            .binding(b"exporter of leg two")
             .unwrap(),
     );
     assert!(matches!(exchange(&mut a, &mut b), Err(Error::BadProof)));
@@ -306,9 +307,9 @@ fn a_binding_set_after_the_first_message_is_refused() {
         listening.respond(None).unwrap(),
     );
     b.receive(&a.transmit().unwrap().unwrap()).unwrap();
-    assert!(matches!(b.with_binding(b"late"), Err(Error::State)));
+    assert!(matches!(b.binding(b"late"), Err(Error::State)));
     a.receive(b"").unwrap_err();
-    assert!(matches!(a.with_binding(b"late"), Err(Error::State)));
+    assert!(matches!(a.binding(b"late"), Err(Error::State)));
 }
 
 #[test]
