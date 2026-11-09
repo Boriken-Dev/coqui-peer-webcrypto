@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **Breaking: a weakened setting is a non-default setting.** `WebCrypto::weakened` and `PairingMethod::weakened` are
-  `non_defaults`, returning coqui-peer's `NonDefault { setting, value, default }`; the old methods and the
-  `Weakening` re-export stay one release as deprecated aliases.
+- **Breaking: a weakened setting is a non-default setting.** `WebCrypto::non_defaults` and `PairingMethod::non_defaults` return coqui-peer's `NonDefault { setting, value, default }`,
+  one for every setting that differs from its default, named by key path (`max_message`, `session_limit`), and
+  `random` when it is replaced.
 
 ### Removed
 
@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Builders and settings.** `WebCrypto::builder(identity)` and `PairingMethod::builder(identity)` set a method up by
+  the setting's name (`responders`, `initiators`, `max_message`, `session_limit`, `random`, `settings`), then `build()`;
+  there is no `new`. `WebCryptoSettings { max_message, session_limit }` and `PairingSettings { max_message }` are guatiao
+  values a file fills, and `settings(..)` takes one whole. `WebCryptoHandshake::binding` sets the outer-channel binding.
 - `WebCrypto` and `WebCryptoHandshake`: the `coqui_peer::Method` named `webcrypto`, as initiator and
   responder, ending in a `Session`.
 - `Session`, `Sealer`, `Opener`: an id both ends agree on, per-direction AES-256-GCM records with an inner

@@ -9,14 +9,14 @@ the package and is self-contained. Development documentation lives with the sour
 | --- | --- | --- | --- |
 | `pin` | `coqui-peer/pin` (SPAKE2, HKDF, HMAC) | PIN pairing (`pair::Pairing::pin`) | off |
 
-MSRV Rust 1.89. A default build depends on `coqui-peer` (by git revision, `1f00bfe`), `p256`,
+MSRV Rust 1.89. A default build depends on `coqui-peer` (by git revision, `e0f96b8`), `guatiao` (by revision), `p256`,
 `aes-gcm`, `hkdf`, `sha2`, `data-encoding`, `serde`, `serde_json`, `getrandom` and `zeroize`. This crate
 is unreleased, with no independent security review: depend on a git revision, and name the same
 `coqui-peer` revision if you use it directly; the wire and API may change at any commit. This is the method named `webcrypto` of `coqui-peer` (`PeerId`, `TrustStore`, the sans-IO
 `Handshake`, `pair`); its API header ships in that crate. `PROTOCOL.md` ships here and is the wire.
 
 Imports: everything is at the crate root, including re-exports of `coqui-peer`'s `Established`,
-`KeyMaterial`, `MessageTransport`, `Method`, `PeerId`, `Random`, `TrustStore`, `NonDefault` (`Weakening` is its deprecated alias for one release) and its module
+`KeyMaterial`, `MessageTransport`, `Method`, `PeerId`, `Random`, `TrustStore`, `NonDefault` and its module
 `pair`.
 
 No `unsafe` code (`#![forbid(unsafe_code)]`), no process-wide state. Nothing reads a file or an
@@ -67,7 +67,7 @@ Decided after the peer proved its key, never before.
 - There is no way to admit anyone here: a stranger's session is a `PairingSession`.
 
 How strangers wait is the store's: a source at `WaitingLimits::per_source` refuses a newcomer and keeps
-those waiting, and records one new peer per `TrustStore::with_record_interval`. A flood can fill a source;
+those waiting, and records one new peer per `TrustStoreBuilder::record_interval`. A flood can fill a source;
 it cannot remove anyone. Behind a reverse proxy every peer shares the proxy's source, unless the caller
 passes the client's address from a header it trusts.
 
@@ -80,19 +80,28 @@ pub const DEFAULT_MAX_MESSAGE: usize = 3072;
 pub fn random() -> Random;                    // the OS generator
 pub struct WebCrypto;                         // Clone (shared); Debug shows no secret
 impl WebCrypto {
-    pub fn new(identity: Identity) -> WebCrypto;                 // neither role until a with_ below
-    pub fn with_responders(self, trust: Trust) -> WebCrypto;     // whom initiate() admits
-    pub fn with_initiators(self, trust: Trust) -> WebCrypto;     // whom respond() admits
-    pub fn with_max_message(self, bytes: usize) -> WebCrypto;    // before parsing; no floor
-    pub fn with_session_limit(self, bytes: u64) -> WebCrypto;    // per direction; DEFAULT_SESSION_LIMIT; no floor
-    pub fn with_random(self, random: Random) -> WebCrypto;       // secure, or for test vectors only
+    pub fn builder(identity: Identity) -> WebCryptoBuilder;   // neither role until responders or initiators
     pub fn identity(&self) -> &Identity;
-    pub fn non_defaults(&self) -> Vec<NonDefault>;  // a replaced random; larger limits; weakened(): deprecated alias for one release
+    pub fn settings(&self) -> WebCryptoSettings;
+    pub fn non_defaults(&self) -> Vec<NonDefault>;  // every WebCryptoSettings key that differs, by key path (`max_message`, `session_limit`); `random` when replaced
 }
+// Setters, the last wins; build() -> WebCrypto:
+pub struct WebCryptoBuilder;                  // Clone; Debug
+impl WebCryptoBuilder {
+    pub fn responders(self, trust: Trust) -> WebCryptoBuilder;     // whom initiate() admits
+    pub fn initiators(self, trust: Trust) -> WebCryptoBuilder;     // whom respond() admits
+    pub fn max_message(self, bytes: usize) -> WebCryptoBuilder;    // before parsing; no floor
+    pub fn session_limit(self, bytes: u64) -> WebCryptoBuilder;    // per direction; DEFAULT_SESSION_LIMIT; no floor
+    pub fn random(self, random: Random) -> WebCryptoBuilder;       // secure, or for test vectors only
+    pub fn settings(self, settings: WebCryptoSettings) -> WebCryptoBuilder;   // both limits, whole
+    pub fn build(self) -> WebCrypto;
+}
+// A guatiao value (ToValue, FromValue, Schema): every key optional, unknown keys refused.
+#[non_exhaustive] pub struct WebCryptoSettings { pub max_message: usize, pub session_limit: u64 }   // Default: DEFAULT_MAX_MESSAGE, DEFAULT_SESSION_LIMIT
 impl coqui_peer::Method for WebCrypto { /* name() = "webcrypto"; initiate(); respond(source) */ }
 pub struct WebCryptoHandshake;
 impl WebCryptoHandshake {
-    pub fn with_binding(self, binding: &[u8]) -> Result<WebCryptoHandshake, Error>;   // Error::State after the first receive
+    pub fn binding(self, binding: &[u8]) -> Result<WebCryptoHandshake, Error>;   // Error::State after the first receive
 }
 pub struct FramedStream<S>;                   // Debug
 impl<S> FramedStream<S> {
@@ -112,7 +121,7 @@ before the message limit applies; `FramedStream` refuses a frame by its declared
 hello ready to `transmit`; `Error::Unsupported` without trust for that role. `finish` gives
 `Established { peer, key: Some(key), session }`.
 
-`with_binding` is for an endpoint that really ends a TLS connection itself: pass that connection's
+`binding` is for an endpoint that really ends a TLS connection itself: pass that connection's
 exporter at both ends, and a relay ending TLS on both sides fails with `Error::BadProof`. Never set it
 through a reverse proxy, where the two ends read different values. It is never sent.
 
@@ -144,7 +153,7 @@ connection at any record boundary; `verify_end` is `Error::Truncated` unless the
 opened. Each direction closes on its own: after `close`, `seal` is `Error::Closed`, and receiving goes on.
 
 Any failure to open ends the session in both directions, split or not: `Error::Record` on every later
-`open`, `seal` and `close`, and the caller closes the connection. At `with_session_limit`, a longer record
+`open`, `seal` and `close`, and the caller closes the connection. At `session_limit`, a longer record
 is `Error::LimitReached` in `seal` or `open`, the session stays intact, a close still passes, and a new
 handshake carries on: there is no rekeying.
 
@@ -158,12 +167,18 @@ a successful handshake.
 pub const PAIR_EXPORT_LABEL: &str = "EXPORTER-coqui-pair";
 pub struct PairingMethod;                     // Clone; Debug
 impl PairingMethod {
-    pub fn new(identity: Identity) -> PairingMethod;             // admits any proved key, in both roles
-    pub fn with_responders(self, trust: Trust) -> PairingMethod; // a joiner verifies the responder
-    pub fn with_max_message(self, bytes: usize) -> PairingMethod;
-    pub fn with_random(self, random: Random) -> PairingMethod;
-    pub fn non_defaults(&self) -> Vec<NonDefault>;    // a replaced random; larger limits (admitting any proved key is what pairing is, not listed)
+    pub fn builder(identity: Identity) -> PairingMethodBuilder;   // admits any proved key, in both roles
+    pub fn settings(&self) -> PairingSettings;
+    pub fn non_defaults(&self) -> Vec<NonDefault>;    // `max_message` when it differs; `random` when replaced (admitting any proved key is what pairing is, not listed)
 }
+pub struct PairingMethodBuilder;              // Clone; Debug; build() -> PairingMethod
+impl PairingMethodBuilder {
+    pub fn responders(self, trust: Trust) -> PairingMethodBuilder;   // a joiner verifies the responder
+    pub fn max_message(self, bytes: usize) -> PairingMethodBuilder;
+    pub fn random(self, random: Random) -> PairingMethodBuilder;
+    pub fn settings(self, settings: PairingSettings) -> PairingMethodBuilder;
+}
+#[non_exhaustive] pub struct PairingSettings { pub max_message: usize }   // Default: DEFAULT_MAX_MESSAGE
 impl coqui_peer::Method for PairingMethod { /* name() = "webcrypto"; initiate(); respond(source) */ }
 pub struct PairingHandshake;  // impl Handshake { Output = PairingSession, Framing::Message }
 pub struct PairingSession;    // no seal, no open: it runs one exchange
@@ -190,16 +205,16 @@ blocks in `PairingDesk::wait` for the operator; each read waits until the exchan
 Then both reconnect under `WebCrypto`, and the full key is what the handshake proves.
 
 - **Invitation**: `join` refuses (`Error::Pairing(PairingError::Unverified)`) unless the proved key is the
-  inviter's, before anything is sent. Pin the inviter in `with_responders` too, to stop others at the
+  inviter's, before anything is sent. Pin the inviter in `responders` too, to stop others at the
   handshake.
 - **PIN** (feature `pin`): no pin needed: the PIN authenticates both keys and the session's binding.
-- **Device flow**: `join` refuses unless `with_responders` verified the responder, or
+- **Device flow**: `join` refuses unless `responders` verified the responder, or
   `Pairing::allow_unverified(true)`, which lets a relay pair in place of both sides.
 
 ## Errors
 
 `Error` (non-exhaustive): `Malformed` (not valid here: encoding, member, key, or place in the
-exchange), `TooLong` (above `with_max_message`, or an export above 8160 bytes), `BadProof` (a signature
+exchange), `TooLong` (above `max_message`, or an export above 8160 bytes), `BadProof` (a signature
 does not verify), `Untrusted` (proved, and `Trust` does not admit it), `Unsupported` (no trust for that
 role), `State` (the handshake is over, `finish` too early, a binding too late), `Random`, `Record`,
 `Truncated`, `Closed`, `LimitReached` (see the session), `Key`, `Pairing(PairingError)`, `Io(io::Error)`. `Display` is one lowercase clause and never quotes input, a key or a path. A

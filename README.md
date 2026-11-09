@@ -70,8 +70,8 @@ impl MessageTransport for Pipe {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (dialer, listener) = (Identity::generate()?, Identity::generate()?);
-    let client = WebCrypto::new(dialer.clone()).with_responders(Trust::pinned([listener.peer_id()]));
-    let server = WebCrypto::new(listener).with_initiators(Trust::pinned([dialer.peer_id()]));
+    let client = WebCrypto::builder(dialer.clone()).responders(Trust::pinned([listener.peer_id()])).build();
+    let server = WebCrypto::builder(listener).initiators(Trust::pinned([dialer.peer_id()])).build();
 
     let ((to_server, from_client), (to_client, from_server)) = (channel(), channel());
     let serving = thread::spawn(move || {
@@ -133,7 +133,7 @@ proxy that also serves a page's JavaScript can replace that JavaScript. The full
 [PROTOCOL.md](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/PROTOCOL.md#through-a-relay).
 
 An endpoint that really ends TLS itself may also bind the handshake to that connection's exporter
-with `WebCryptoHandshake::with_binding`, which refuses a relay ending TLS on both sides.
+with `WebCryptoHandshake::binding`, which refuses a relay ending TLS on both sides.
 
 ## Development
 
