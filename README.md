@@ -133,7 +133,7 @@ proxy that also serves a page's JavaScript can replace that JavaScript. The full
 [PROTOCOL.md](https://github.com/Boriken-Dev/coqui-peer-webcrypto/blob/main/PROTOCOL.md#through-a-relay).
 
 An endpoint that really ends TLS itself may also bind the handshake to that connection's exporter
-with `WebCryptoHandshake::binding`, which refuses a relay ending TLS on both sides.
+with `WebCryptoHandshake::bind`, which refuses a relay ending TLS on both sides.
 
 ## Development
 

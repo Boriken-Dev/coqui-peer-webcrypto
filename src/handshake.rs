@@ -485,7 +485,7 @@ impl WebCryptoHandshake {
     /// # Errors
     ///
     /// [`Error::State`] after the first [`receive`](Handshake::receive): the transcript is fixed.
-    pub fn binding(mut self, binding: &[u8]) -> Result<Self, Error> {
+    pub fn bind(mut self, binding: &[u8]) -> Result<Self, Error> {
         self.0.set_binding(binding)?;
         Ok(self)
     }

@@ -160,7 +160,7 @@ pub fn coqui_peer_webcrypto::WebCryptoBuilder::session_limit(self, u64) -> Self
 pub fn coqui_peer_webcrypto::WebCryptoBuilder::settings(self, coqui_peer_webcrypto::WebCryptoSettings) -> Self
 pub struct coqui_peer_webcrypto::WebCryptoHandshake(_)
 impl coqui_peer_webcrypto::WebCryptoHandshake
-pub fn coqui_peer_webcrypto::WebCryptoHandshake::binding(self, &[u8]) -> core::result::Result<Self, coqui_peer_webcrypto::Error>
+pub fn coqui_peer_webcrypto::WebCryptoHandshake::bind(self, &[u8]) -> core::result::Result<Self, coqui_peer_webcrypto::Error>
 impl coqui_peer::method::Handshake for coqui_peer_webcrypto::WebCryptoHandshake
 pub type coqui_peer_webcrypto::WebCryptoHandshake::Error = coqui_peer_webcrypto::Error
 pub type coqui_peer_webcrypto::WebCryptoHandshake::Output = coqui_peer_webcrypto::Session

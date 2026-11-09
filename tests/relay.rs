@@ -259,12 +259,8 @@ fn an_outer_binding_is_optional_and_refuses_two_different_channels() {
     let (_, _, dialing, listening) = pinned_pair();
     // Each end really ended one TLS connection, and read one exporter.
     let (mut a, mut b) = (
-        dialing.initiate().unwrap().binding(b"exporter").unwrap(),
-        listening
-            .respond(None)
-            .unwrap()
-            .binding(b"exporter")
-            .unwrap(),
+        dialing.initiate().unwrap().bind(b"exporter").unwrap(),
+        listening.respond(None).unwrap().bind(b"exporter").unwrap(),
     );
     exchange(&mut a, &mut b).unwrap();
     let (at_client, at_server) = (a.finish().unwrap(), b.finish().unwrap());
@@ -275,12 +271,12 @@ fn an_outer_binding_is_optional_and_refuses_two_different_channels() {
         dialing
             .initiate()
             .unwrap()
-            .binding(b"exporter of leg one")
+            .bind(b"exporter of leg one")
             .unwrap(),
         listening
             .respond(None)
             .unwrap()
-            .binding(b"exporter of leg two")
+            .bind(b"exporter of leg two")
             .unwrap(),
     );
     assert!(matches!(exchange(&mut a, &mut b), Err(Error::BadProof)));
@@ -307,9 +303,9 @@ fn a_binding_set_after_the_first_message_is_refused() {
         listening.respond(None).unwrap(),
     );
     b.receive(&a.transmit().unwrap().unwrap()).unwrap();
-    assert!(matches!(b.binding(b"late"), Err(Error::State)));
+    assert!(matches!(b.bind(b"late"), Err(Error::State)));
     a.receive(b"").unwrap_err();
-    assert!(matches!(a.binding(b"late"), Err(Error::State)));
+    assert!(matches!(a.bind(b"late"), Err(Error::State)));
 }
 
 #[test]

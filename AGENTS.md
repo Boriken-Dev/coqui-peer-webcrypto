@@ -101,7 +101,7 @@ impl WebCryptoBuilder {
 impl coqui_peer::Method for WebCrypto { /* name() = "webcrypto"; initiate(); respond(source) */ }
 pub struct WebCryptoHandshake;
 impl WebCryptoHandshake {
-    pub fn binding(self, binding: &[u8]) -> Result<WebCryptoHandshake, Error>;   // Error::State after the first receive
+    pub fn bind(self, binding: &[u8]) -> Result<WebCryptoHandshake, Error>;   // Error::State after the first receive
 }
 pub struct FramedStream<S>;                   // Debug
 impl<S> FramedStream<S> {
