@@ -161,12 +161,16 @@ fn swapping_the_initiators_key_in_the_hello_fails_the_responders_proof() {
     let (_, server, dialing, _) = pinned_pair();
     let attacker = Identity::generate().unwrap();
     // The responder admits the attacker, so only the proof can stop this.
-    let listening = WebCrypto::builder(server.clone())
+    let listening = WebCrypto::builder()
+        .identity(server.clone())
         .initiators(Trust::pinned([attacker.peer_id()]))
-        .build();
-    let attacker_side = WebCrypto::builder(attacker)
+        .build()
+        .unwrap();
+    let attacker_side = WebCrypto::builder()
+        .identity(attacker)
         .responders(Trust::pinned([server.peer_id()]))
-        .build();
+        .build()
+        .unwrap();
     let attacker_hello = attacker_side
         .initiate()
         .unwrap()
@@ -190,9 +194,11 @@ fn swapping_the_responders_key_for_a_relays_own_fails_the_pin() {
     let (client, server, dialing, _) = pinned_pair();
     let relay = Identity::generate().unwrap();
     // The relay runs a real handshake of its own toward the client.
-    let relaying = WebCrypto::builder(relay)
+    let relaying = WebCrypto::builder()
+        .identity(relay)
         .initiators(Trust::pinned([client.peer_id()]))
-        .build();
+        .build()
+        .unwrap();
     let (mut a, mut b) = (dialing.initiate().unwrap(), relaying.respond(None).unwrap());
     assert!(matches!(exchange(&mut a, &mut b), Err(Error::Untrusted)));
     assert_ne!(relaying.identity().peer_id(), server.peer_id());

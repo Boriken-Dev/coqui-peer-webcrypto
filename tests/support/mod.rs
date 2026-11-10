@@ -12,12 +12,16 @@ use coqui_peer_webcrypto::{
 /// A pair of identities that pin each other, as methods.
 pub fn pinned_pair() -> (Identity, Identity, WebCrypto, WebCrypto) {
     let (client, server) = (Identity::generate().unwrap(), Identity::generate().unwrap());
-    let dialing = WebCrypto::builder(client.clone())
+    let dialing = WebCrypto::builder()
+        .identity(client.clone())
         .responders(Trust::pinned([server.peer_id()]))
-        .build();
-    let listening = WebCrypto::builder(server.clone())
+        .build()
+        .unwrap();
+    let listening = WebCrypto::builder()
+        .identity(server.clone())
         .initiators(Trust::pinned([client.peer_id()]))
-        .build();
+        .build()
+        .unwrap();
     (client, server, dialing, listening)
 }
 
@@ -26,14 +30,18 @@ pub fn pinned_pair_with(
     random: coqui_peer_webcrypto::Random,
 ) -> (Identity, Identity, WebCrypto, WebCrypto) {
     let (client, server) = (Identity::generate().unwrap(), Identity::generate().unwrap());
-    let dialing = WebCrypto::builder(client.clone())
+    let dialing = WebCrypto::builder()
+        .identity(client.clone())
         .responders(Trust::pinned([server.peer_id()]))
         .random(random.clone())
-        .build();
-    let listening = WebCrypto::builder(server.clone())
+        .build()
+        .unwrap();
+    let listening = WebCrypto::builder()
+        .identity(server.clone())
         .initiators(Trust::pinned([client.peer_id()]))
         .random(random)
-        .build();
+        .build()
+        .unwrap();
     (client, server, dialing, listening)
 }
 

@@ -24,9 +24,7 @@ pin = ["coqui-peer/pin"]
 [dependencies]
 # The peer id, trust store, pairing and handshake this crate is a method of. The family has no
 # releases for now: its crates depend on each other by git revision.
-coqui-peer = { git = "https://github.com/Boriken-Dev/coqui-peer", rev = "381e2a8144a228e592dc7d82eeb7db85885422ec" }
-# The settings types' value form and schema; alpha, by revision, as the family pins it (the one coqui-peer builds on).
-guatiao = { git = "https://github.com/Boriken-Dev/guatiao", rev = "0350bae7fef4cef2aa46ce73f1ef6be15983d83b", default-features = false, features = ["derive"] }
+coqui-peer = { git = "https://github.com/Boriken-Dev/coqui-peer", rev = "984db3d54b73de10c7892b06fe269a259de2d1c5" }
 # ECDSA and ECDH over P-256, which is what WebCrypto offers everywhere. Pre-1.0: the RustCrypto
 # release line sharing sha2 and hkdf with coqui-peer.
 p256 = { version = "0.14", default-features = false, features = ["alloc", "ecdsa", "ecdh", "pkcs8"] }
@@ -35,6 +33,8 @@ aes-gcm = { version = "0.11", default-features = false, features = ["aes", "allo
 # The session's keys. Pre-1.0: the same release line, already in coqui-peer's `pin` build.
 hkdf = { version = "0.13", default-features = false }
 sha2 = { version = "0.11.1", default-features = false }
+# The settings types and the method builders, described field by field; the one revision the family names.
+coqui-builder = { git = "https://github.com/Boriken-Dev/coqui-builder", rev = "c1875f8276bd6366c38e9133fdb1181a0ffbaaad", features = ["derive"] }
 # Strict base64url; already a dependency of coqui-peer.
 data-encoding = { version = "2", default-features = false, features = ["alloc"] }
 # The handshake messages.
@@ -48,8 +48,9 @@ zeroize = { version = "1", default-features = false, features = ["alloc"] }
 [dev-dependencies]
 # Temporary store directories.
 tempfile = "3"
-# The settings types' text forms in tests, through guatiao-serde.
-guatiao-serde = { git = "https://github.com/Boriken-Dev/guatiao", rev = "0350bae7fef4cef2aa46ce73f1ef6be15983d83b", default-features = false, features = ["json", "toml"] }
+# The settings types read from text in tests.
+coqui-builder = { git = "https://github.com/Boriken-Dev/coqui-builder", rev = "c1875f8276bd6366c38e9133fdb1181a0ffbaaad", features = ["derive", "serde"] }
+toml = "=1.1.8"
 
 [[test]]
 name = "pair"

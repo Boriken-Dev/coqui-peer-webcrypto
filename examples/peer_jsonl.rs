@@ -52,15 +52,17 @@ fn main() -> Result<(), Failure> {
             .nth(2)
             .ok_or("a client id is required")?
             .parse()?;
-        WebCrypto::builder(identity)
+        WebCrypto::builder()
+            .identity(identity)
             .initiators(Trust::pinned([allowed]))
-            .build()
+            .build()?
             .respond(None)?
     } else {
         let expected: PeerId = next(&mut lines)?.parse()?;
-        WebCrypto::builder(identity)
+        WebCrypto::builder()
+            .identity(identity)
             .responders(Trust::pinned([expected]))
-            .build()
+            .build()?
             .initiate()?
     };
     let established = loop {

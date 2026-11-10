@@ -149,14 +149,18 @@ fn no_freed_block_holds_a_scalar_a_traffic_key_or_the_export_secret() {
         client.write_new(&path).unwrap();
         drop(Identity::read(&path).unwrap().unwrap());
 
-        let dialing = WebCrypto::builder(client.clone())
+        let dialing = WebCrypto::builder()
+            .identity(client.clone())
             .responders(Trust::pinned([server.peer_id()]))
             .random(scripted(&SOURCE_INITIATOR))
-            .build();
-        let listening = WebCrypto::builder(server.clone())
+            .build()
+            .unwrap();
+        let listening = WebCrypto::builder()
+            .identity(server.clone())
             .initiators(Trust::pinned([client.peer_id()]))
             .random(scripted(&SOURCE_RESPONDER))
-            .build();
+            .build()
+            .unwrap();
         let ((to_far, from_near), (to_near, from_far)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
         let serving = std::thread::spawn(move || {

@@ -19,11 +19,15 @@ struct Server {
 
 fn server(configure: impl FnOnce(TrustStoreBuilder) -> TrustStoreBuilder) -> Server {
     let dir = tempfile::tempdir().unwrap();
-    let store = configure(TrustStore::builder(dir.path())).build().unwrap();
+    let store = configure(TrustStore::builder().state_dir(dir.path()))
+        .build()
+        .unwrap();
     let identity = Identity::generate().unwrap();
-    let method = WebCrypto::builder(identity.clone())
+    let method = WebCrypto::builder()
+        .identity(identity.clone())
         .initiators(Trust::Store(store.clone()))
-        .build();
+        .build()
+        .unwrap();
     Server {
         identity,
         method,
@@ -34,9 +38,11 @@ fn server(configure: impl FnOnce(TrustStoreBuilder) -> TrustStoreBuilder) -> Ser
 
 impl Server {
     fn knock(&self, peer: &Identity, source: &str) {
-        let dialing = WebCrypto::builder(peer.clone())
+        let dialing = WebCrypto::builder()
+            .identity(peer.clone())
             .responders(Trust::pinned([self.identity.peer_id()]))
-            .build();
+            .build()
+            .unwrap();
         let (mut near, mut far) = (
             dialing.initiate().unwrap(),
             self.method.respond(Some(source.parse().unwrap())).unwrap(),

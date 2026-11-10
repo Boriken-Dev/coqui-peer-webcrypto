@@ -114,7 +114,7 @@ fn a_session_splits_for_a_reader_and_a_writer_on_two_threads() {
 #[test]
 fn a_role_without_trust_is_unsupported() {
     let identity = Identity::generate().unwrap();
-    let method = WebCrypto::builder(identity).build();
+    let method = WebCrypto::builder().identity(identity).build().unwrap();
     assert!(matches!(method.initiate(), Err(Error::Unsupported)));
     assert!(matches!(method.respond(None), Err(Error::Unsupported)));
 }
@@ -122,14 +122,18 @@ fn a_role_without_trust_is_unsupported() {
 #[test]
 fn an_empty_pin_set_admits_nobody_and_a_pin_of_another_digest_matches_nothing() {
     let (client, server, dialing, _) = pinned_pair();
-    let nobody = WebCrypto::builder(server.clone())
+    let nobody = WebCrypto::builder()
+        .identity(server.clone())
         .initiators(Trust::pinned([]))
-        .build();
+        .build()
+        .unwrap();
     assert!(matches!(run(&dialing, &nobody), Err(Error::Untrusted)));
     let other_digest = coqui_peer::Digest::Sha384.of(client.spki_der());
-    let wrong = WebCrypto::builder(server)
+    let wrong = WebCrypto::builder()
+        .identity(server)
         .initiators(Trust::pinned([other_digest]))
-        .build();
+        .build()
+        .unwrap();
     assert!(matches!(run(&dialing, &wrong), Err(Error::Untrusted)));
 }
 
@@ -138,12 +142,16 @@ fn a_store_applies_acceptance_and_revocation_at_the_next_handshake() {
     let dir = tempfile::tempdir().unwrap();
     let store = TrustStore::open(dir.path()).unwrap();
     let (client, server) = (Identity::generate().unwrap(), Identity::generate().unwrap());
-    let dialing = WebCrypto::builder(client.clone())
+    let dialing = WebCrypto::builder()
+        .identity(client.clone())
         .responders(Trust::pinned([server.peer_id()]))
-        .build();
-    let listening = WebCrypto::builder(server)
+        .build()
+        .unwrap();
+    let listening = WebCrypto::builder()
+        .identity(server)
         .initiators(Trust::Store(store.clone()))
-        .build();
+        .build()
+        .unwrap();
 
     assert!(matches!(run(&dialing, &listening), Err(Error::Untrusted)));
     store.accept(&client.peer_id()).unwrap();
@@ -159,12 +167,16 @@ fn a_proven_stranger_waits_with_its_source_and_a_failed_proof_records_nothing() 
     let dir = tempfile::tempdir().unwrap();
     let store = TrustStore::open(dir.path()).unwrap();
     let (client, server) = (Identity::generate().unwrap(), Identity::generate().unwrap());
-    let dialing = WebCrypto::builder(client.clone())
+    let dialing = WebCrypto::builder()
+        .identity(client.clone())
         .responders(Trust::pinned([server.peer_id()]))
-        .build();
-    let listening = WebCrypto::builder(server)
+        .build()
+        .unwrap();
+    let listening = WebCrypto::builder()
+        .identity(server)
         .initiators(Trust::Store(store.clone()))
-        .build();
+        .build()
+        .unwrap();
     let source = "192.0.2.7:4000".parse().unwrap();
 
     // A hello alone proves nothing, and a stolen public key cannot sign.
@@ -200,12 +212,16 @@ fn an_initiator_trusting_a_store_queues_nobody() {
     let dir = tempfile::tempdir().unwrap();
     let store = TrustStore::open(dir.path()).unwrap();
     let (client, server) = (Identity::generate().unwrap(), Identity::generate().unwrap());
-    let dialing = WebCrypto::builder(client.clone())
+    let dialing = WebCrypto::builder()
+        .identity(client.clone())
         .responders(Trust::Store(store.clone()))
-        .build();
-    let listening = WebCrypto::builder(server.clone())
+        .build()
+        .unwrap();
+    let listening = WebCrypto::builder()
+        .identity(server.clone())
         .initiators(Trust::pinned([client.peer_id()]))
-        .build();
+        .build()
+        .unwrap();
     assert!(matches!(run(&dialing, &listening), Err(Error::Untrusted)));
     assert!(store.waiting().unwrap().is_empty());
     store.accept_key(&server.key_material()).unwrap();
@@ -220,19 +236,24 @@ fn a_store_refuses_another_methods_key_under_the_same_id() {
     let mut foreign = client.key_material();
     foreign.method = "tls".to_owned();
     store.accept_key(&foreign).unwrap();
-    let dialing = WebCrypto::builder(client)
+    let dialing = WebCrypto::builder()
+        .identity(client)
         .responders(Trust::pinned([server.peer_id()]))
-        .build();
-    let listening = WebCrypto::builder(server)
+        .build()
+        .unwrap();
+    let listening = WebCrypto::builder()
+        .identity(server)
         .initiators(Trust::Store(store))
-        .build();
+        .build()
+        .unwrap();
     assert!(matches!(run(&dialing, &listening), Err(Error::Untrusted)));
 }
 
 #[test]
 fn a_proven_successor_is_promoted_and_the_old_key_retires() {
     let dir = tempfile::tempdir().unwrap();
-    let store = TrustStore::builder(dir.path())
+    let store = TrustStore::builder()
+        .state_dir(dir.path())
         .rotation({
             let mut value = RotationOptions::default();
             value.retire_after = core::time::Duration::ZERO;
@@ -249,13 +270,17 @@ fn a_proven_successor_is_promoted_and_the_old_key_retires() {
     store
         .announce_successor(&old.peer_id(), &new.key_material())
         .unwrap();
-    let listening = WebCrypto::builder(server.clone())
+    let listening = WebCrypto::builder()
+        .identity(server.clone())
         .initiators(Trust::Store(store.clone()))
-        .build();
+        .build()
+        .unwrap();
     let with = |identity: &Identity| {
-        WebCrypto::builder(identity.clone())
+        WebCrypto::builder()
+            .identity(identity.clone())
             .responders(Trust::pinned([server.peer_id()]))
             .build()
+            .unwrap()
     };
     assert_eq!(run(&with(&new), &listening).unwrap().1.peer, new.peer_id());
     assert!(store.is_accepted(&new.peer_id()));
@@ -269,7 +294,8 @@ fn a_proven_successor_is_promoted_and_the_old_key_retires() {
 #[test]
 fn a_successor_needing_approval_is_refused_but_recorded_as_proven() {
     let dir = tempfile::tempdir().unwrap();
-    let store = TrustStore::builder(dir.path())
+    let store = TrustStore::builder()
+        .state_dir(dir.path())
         .rotation({
             let mut value = RotationOptions::default();
             value.require_approval = true;
@@ -286,12 +312,16 @@ fn a_successor_needing_approval_is_refused_but_recorded_as_proven() {
     store
         .announce_successor(&old.peer_id(), &new.key_material())
         .unwrap();
-    let listening = WebCrypto::builder(server.clone())
+    let listening = WebCrypto::builder()
+        .identity(server.clone())
         .initiators(Trust::Store(store.clone()))
-        .build();
-    let dialing = WebCrypto::builder(new.clone())
+        .build()
+        .unwrap();
+    let dialing = WebCrypto::builder()
+        .identity(new.clone())
         .responders(Trust::pinned([server.peer_id()]))
-        .build();
+        .build()
+        .unwrap();
     assert!(matches!(run(&dialing, &listening), Err(Error::Untrusted)));
     assert!(store.waiting().unwrap().is_empty());
     assert_eq!(
@@ -304,10 +334,12 @@ fn a_successor_needing_approval_is_refused_but_recorded_as_proven() {
 #[test]
 fn a_self_connection_is_refused() {
     let identity = Identity::generate().unwrap();
-    let method = WebCrypto::builder(identity.clone())
+    let method = WebCrypto::builder()
+        .identity(identity.clone())
         .responders(Trust::pinned([identity.peer_id()]))
         .initiators(Trust::pinned([identity.peer_id()]))
-        .build();
+        .build()
+        .unwrap();
     assert!(matches!(run(&method, &method), Err(Error::Malformed)));
 }
 
@@ -374,16 +406,20 @@ fn the_message_limit_is_a_setting_with_a_default_and_no_floor() {
             .receive(&vec![b' '; DEFAULT_MAX_MESSAGE + 1]),
         Err(Error::TooLong)
     ));
-    let tiny = WebCrypto::builder(server.clone())
+    let tiny = WebCrypto::builder()
+        .identity(server.clone())
         .initiators(Trust::pinned([client.peer_id()]))
         .max_message(16)
-        .build();
+        .build()
+        .unwrap();
     assert_eq!(tiny.non_defaults()[0].setting, "max_message");
     assert!(matches!(run(&dialing, &tiny), Err(Error::TooLong)));
-    let large = WebCrypto::builder(server)
+    let large = WebCrypto::builder()
+        .identity(server)
         .initiators(Trust::pinned([client.peer_id()]))
         .max_message(1 << 20)
-        .build();
+        .build()
+        .unwrap();
     assert_eq!(large.non_defaults()[0].setting, "max_message");
     assert!(run(&dialing, &large).is_ok());
 }
