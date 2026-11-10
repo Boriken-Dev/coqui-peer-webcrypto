@@ -98,6 +98,7 @@ impl WebCryptoBuilder {
     pub fn fill(self, settings: Partial<WebCryptoSettings>) -> Self;   // only the keys the partial sets
     pub fn fill_from(self, source: &mut impl Source) -> Result<Self, FillError>;
     pub fn build(self) -> Result<WebCrypto, Missing>;              // Missing names `identity`
+    pub fn parts(self) -> Result<WebCryptoParts, Missing>;         // the collected parts, for a second terminal
 }
 pub struct WebCryptoParts;                    // Debug; what the builder collects (settings and inputs)
 // Describe (coqui-builder): every key optional, unknown keys refused; read as `Partial<WebCryptoSettings>`.
